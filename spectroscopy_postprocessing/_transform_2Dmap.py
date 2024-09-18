@@ -117,6 +117,7 @@ def transform_map2contour(original_contour, deformed_contour, data_map, original
     trafo_grid_points = trafo_grid_points + deformed_centroid
 
     # Interpolate data_map from the regular grid to the transformed grid
+    ts = data_map.ravel()
     data_map_trafo = griddata(trafo_grid_points,
                               data_map.ravel(),
                               original_grid_points,
