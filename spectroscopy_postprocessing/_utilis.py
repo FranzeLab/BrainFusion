@@ -3,9 +3,6 @@ import matplotlib.path as mpath
 import os.path
 import h5py
 import threading
-import re
-import pandas as pd
-from PIL import Image
 
 
 def get_user_input(prompt, timeout=10):
@@ -49,17 +46,6 @@ def center_contour(contour):
     return centered_contour, centroid
 
 
-def create_data_grid(data):
-    # Generate a grid covering the area for both contours
-    x = np.arange(0, len(data[0, :]), 1)
-    y = np.arange(0, len(data[:, 0]), 1)
-
-    X, Y = np.meshgrid(x, y)  # Create grid of coordinates
-    data_grid = np.stack((X, Y), axis=-1)
-
-    return data_grid
-
-
 def get_h5rep(h5_path, data_var):
     assert os.path.exists(h5_path), print(f'{h5_path} does not exist.')
     assert data_var in ['Brillouin', 'Fluorescence'], (f'{data_var} is not available in h5 file. '
@@ -85,16 +71,6 @@ def get_h5metadata(h5_path, data_var):
     metadata_dict = {}
     with h5py.File(h5_path, 'r') as h5_file:
         for rep in reps:
-            if data_var == 'Brillouin':
-                # Get grid coordinates from Brillouin measurement (x,y inverted)
-                brillouin_grid_x = h5_file[f'Brillouin/{rep}/payload/positions-x'][:]
-                brillouin_grid_y = h5_file[f'Brillouin/{rep}/payload/positions-y'][:]
-                brillouin_grid_z = h5_file[f'Brillouin/{rep}/payload/positions-z'][:]
-                brillouin_grid = np.stack((brillouin_grid_x, brillouin_grid_y, brillouin_grid_z), axis=-1)
-                brillouin_grid = np.transpose(brillouin_grid, (2, 1, 0, 3))
-            else:
-                brillouin_grid = None
-
             pixToMicrometerX = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/micrometerToPixX']
             pixToMicrometerX_x, pixToMicrometerX_y = pixToMicrometerX.attrs['x'], pixToMicrometerX.attrs['y']
 
@@ -104,22 +80,40 @@ def get_h5metadata(h5_path, data_var):
             origin = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/origin']
             origin_x, origin_y = origin.attrs['x'], origin.attrs['y']
 
-            scanner = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/positionScanner']
-            scanner_x, scanner_y = scanner.attrs['x'], scanner.attrs['y']
-
             stage = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/positionStage']
             stage_x, stage_y = stage.attrs['x'], stage.attrs['y']
 
+            scanner = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/positionScanner']
+            scanner_x, scanner_y = scanner.attrs['x'], scanner.attrs['y']
+
+            # Transform scanner position to coordinate system of image
+            scanner_x = scanner_x * pixToMicrometerX_y
+            scanner_y = scanner_y * pixToMicrometerY_x
+
+            if data_var == 'Brillouin':
+                # Get grid coordinates from Brillouin measurement
+                brillouin_grid_x = h5_file[f'Brillouin/{rep}/payload/positions-x'][:]
+                brillouin_grid_y = h5_file[f'Brillouin/{rep}/payload/positions-y'][:]
+                brillouin_grid_z = h5_file[f'Brillouin/{rep}/payload/positions-z'][:]
+
+                # Transform Brillouin measurement grid to coordinate system of image
+                brillouin_grid_x = (brillouin_grid_x - stage_x) * pixToMicrometerX_y
+                brillouin_grid_y = (brillouin_grid_y - stage_y) * pixToMicrometerY_x
+                brillouin_grid_z = (brillouin_grid_z - np.min(brillouin_grid_z))  # Already in µm
+
+                brillouin_grid = np.stack((brillouin_grid_x, brillouin_grid_y, brillouin_grid_z), axis=-1)
+                brillouin_grid = np.transpose(brillouin_grid, (2, 1, 0, 3))
+            else:
+                brillouin_grid = None
+
             # Create a dictionary for the current replicate
-
-
             replicate_metadata = {
                 'pixToMicrometerX': np.stack((pixToMicrometerX_x, pixToMicrometerX_y), axis=-1),
                 'pixToMicrometerY': np.stack((pixToMicrometerY_x, pixToMicrometerY_y), axis=-1),
                 'origin': np.stack((origin_x, origin_y), axis=-1),
                 'scanner': np.stack((scanner_x, scanner_y), axis=-1),
                 'stage': np.stack((stage_x, stage_y), axis=-1),
-                'brillouin_grid': brillouin_grid  # Switch positions
+                'brillouin_grid': brillouin_grid
             }
 
             metadata_dict[rep] = replicate_metadata
@@ -127,41 +121,12 @@ def get_h5metadata(h5_path, data_var):
     return metadata_dict, reps
 
 
-def get_brillouin_data(br_path):
-    assert os.path.exists(br_path), f'{br_path} does not exist!'
-    pattern = re.compile(r'Brillouin_BMrep(\d+)_(\w+)_slice-(\d+)\.csv')
+# ToDo: Implement more elaborate analysis method
+def project_brillouin_dataset(bm_data):
+    bm_data_proj = {}
+    for key, value in bm_data.items():
+        new_value = value.copy()  # Copy the original data to avoid modifying it
+        new_value[new_value < 4.4] = np.nan
+        bm_data_proj[key + '_proj'] = np.max(new_value, axis=-1)  # Store the projection
 
-    data_dict = {}
-    for filename in os.listdir(br_path):
-        # Match the filename pattern
-        match = pattern.match(filename)
-        if match:
-            rep = int(match.group(1))  # Extract the replicate number
-            variable = match.group(2)  # Extract the variable name
-            slice_num = int(match.group(3))  # Extract the slice number
-
-            # Read the CSV file
-            file_path = os.path.join(br_path, filename)
-            data_slice = pd.read_csv(file_path, skiprows=2, header=None).to_numpy()
-
-            # Expand the data_slice to add a new dimension for slices
-            data_slice_expanded = np.expand_dims(data_slice, axis=-1)  # Shape becomes (rows, cols, 1)
-
-            # Initialize the variable dictionary if it doesn't exist
-            if rep not in data_dict:
-                data_dict[rep] = {}
-
-            # Initialize the variable array if it doesn't exist
-            if variable not in data_dict[rep]:
-                data_dict[rep][variable] = []
-
-            # Append the expanded data slice to the appropriate variable for the replicate
-            data_dict[rep][variable].append(data_slice_expanded)
-
-    # Convert lists to arrays along the last dimension for each variable
-    for rep in data_dict:
-        for variable in data_dict[rep]:
-            data_dict[rep][variable] = np.concatenate(data_dict[rep][variable], axis=-1)
-
-    return data_dict
-
+    return bm_data_proj

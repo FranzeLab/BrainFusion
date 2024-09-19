@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from skimage.measure import find_contours
 from scipy.interpolate import interp1d
 
 
@@ -10,7 +9,6 @@ def extract_and_interpolate_contours(masks, num_points=1000):
     contours = []
     for mask in masks:
         contour = extract_contours(mask)
-        contour[-1, :] = contour[0, :]  # Close contour
         contour_interp = interpolate_contour(contour, num_points)
         contours.append(contour_interp)
     return contours
@@ -18,15 +16,22 @@ def extract_and_interpolate_contours(masks, num_points=1000):
 
 def extract_contours(mask):
     """Extract contours from a binary mask."""
-    contours = find_contours(mask, 0.5)
+    # Ensure mask is in the correct format (uint8)
+    mask = (mask > 0).astype(np.uint8)
 
-    if len(contours) > 1:
-        contour = np.vstack(contours)
+    # Find the external contour
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if contours:
+        # Assuming there is only one main contour, return the largest contour
+        contour = max(contours, key=cv2.contourArea)
+        # Remove the unnecessary dimension
+        contour = np.squeeze(contour)
+
+        # Close contour
+        contour[-1, :] = contour[0, :]  # Close contour
     else:
-        contour = contours[0]
-
-    # Switch the x and y indices (swap columns)
-    contour[:, [0, 1]] = contour[:, [1, 0]]
+        contour = None
 
     return contour
 
@@ -47,9 +52,9 @@ def match_contours(contours):
     matched_contours = [template_contour]  # Keep template as the first contour
     for contour in contours[1:]:
         shifted_contour = shift_contour(contour, template_contour)  # ToDO: Sometimes makes trafo matrix singular
-        matched_contour = match_contour_with_ellipse(contour, template_contour)
+        matched_contour = match_contour_with_ellipse(shifted_contour, template_contour)
         matched_contours.append(matched_contour)
-    return matched_contours
+    return matched_contours, template_contour
 
 
 def shift_contour(contour, reference_contour):
@@ -106,24 +111,27 @@ def calculate_median_contour(contours):
     return contour
 
 
-def plot_contours(template_contour, matched_contours, median_contour):
+def plot_contours(median_contour, template_contour, matched_contours):
     """Plot the template, matched contours, and the median contour"""
     fig = plt.figure(figsize=(8, 8))
-    ax = plt.gca()
 
     # Plot the template contour
     plt.plot(template_contour[:, 0], template_contour[:, 1], 'g-', linewidth=2, label='Mask (Template)')
+    plt.scatter(template_contour[0, 0], template_contour[0, 1], color='orange', s=12, label='First contour coordinate')
 
     # Plot the matched contours (only label the first one)
     for i, contour in enumerate(matched_contours[1:]):
         if i == 0:
             plt.plot(contour[:, 0], contour[:, 1], 'b-', label='Masks (Matched)')
+            plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
         else:
             plt.plot(contour[:, 0], contour[:, 1], 'b-')  # No label for subsequent contours
+            plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
 
     # Plot the median contour
     plt.plot(median_contour[:, 0], median_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
 
+    plt.gca().invert_yaxis()
     plt.legend()
     plt.axis('equal')
     plt.title('Path Density with Contours')
@@ -131,14 +139,15 @@ def plot_contours(template_contour, matched_contours, median_contour):
     return fig
 
 
+# ToDo: Implement choice of contour template
 def find_average_contour(masks):
     # Extract and interpolate contours
     contours_list = extract_and_interpolate_contours(masks)
 
     # Circularly align and match contours using ellipse fitting
-    matched_contour_list = match_contours(contours_list)
+    matched_contour_list, template_contour = match_contours(contours_list)
 
     # Calculate the median contour
     median_contour = calculate_median_contour(matched_contour_list)
 
-    return median_contour, contours_list
+    return median_contour, contours_list, template_contour, matched_contour_list
