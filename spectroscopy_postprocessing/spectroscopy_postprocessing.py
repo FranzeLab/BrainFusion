@@ -1,10 +1,11 @@
 import os
 import matplotlib.pyplot as plt
-from _load_brillouin_experiment import load_brillouin_experiment, plot_brillouin_maps
-from _find_average_contour import find_average_contour, plot_contours
-from _transform_2Dmap import transform_map2contour, plot_cont_func
-from _calculate_average_heatmap import average_heatmap, plot_average_heatmap
+from _load_brillouin_experiment import load_brillouin_experiment
+from _find_average_contour import find_average_contour
+from _transform_2Dmap import transform_map2contour
+from _calculate_average_heatmap import average_heatmap
 from _utilis import project_brillouin_dataset
+from _plot_maps import plot_brillouin_maps, plot_contours, plot_cont_func, plot_average_heatmap
 
 # Start analysis
 base_folder = os.path.join('C:/Users/niklas/OneDrive/Daten Master-Projekt/Brillouin/Data')
@@ -37,8 +38,8 @@ median_contour, contours_list, template_contour, matched_contour_list = find_ave
 fig = plot_contours(median_contour, template_contour, matched_contour_list)
 output_path = os.path.join(results_folder, 'matched_mask_contours')
 fig.savefig(output_path, dpi=300, bbox_inches='tight')
-fig.show()
-#plt.close()
+# fig.show()
+plt.close()
 
 # Transform Brillouin maps to average map
 bm_data_trafo_list, bm_grid_trafo_list, contour_trafo_list = [], [], []
@@ -50,13 +51,14 @@ for index, contour in enumerate(contours_list):
                               folder_names[index])
     output_path = os.path.join(results_folder, f'{folder_names[index]}')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
-    fig.show()
-    #plt.close()
+    # fig.show()
+    plt.close()
 
-    bm_data_trafo, trafo_grid, trafo_contour = transform_map2contour(contour,
-                                                                     median_contour,
-                                                                     bm_data_list[index],
-                                                                     bm_metadata_list[index])
+    bm_data_trafo, trafo_grid, extended_grid, trafo_contour = transform_map2contour(contour,
+                                                                                    median_contour,
+                                                                                    bm_data_list[index],
+                                                                                    bm_metadata_list[index],
+                                                                                    bm_metadata_list[0])
     bm_data_trafo_list.append(bm_data_trafo)
     bm_grid_trafo_list.append(trafo_grid)
     contour_trafo_list.append(trafo_contour)
@@ -66,25 +68,25 @@ for index, contour in enumerate(contours_list):
                          median_contour,
                          trafo_contour,
                          bm_data_list[index],
-                         bm_metadata_list[index],
                          bm_data_trafo_list[index],
-                         bm_grid_trafo_list[index])
+                         bm_metadata_list[index],
+                         bm_grid_trafo_list[index],
+                         extended_grid)
 
     output_path = os.path.join(results_folder, f'MeanContourTransformed_{folder_names[index]}')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
-    fig.show()
-    #plt.close()
+    # fig.show()
+    plt.close()
 
 # Calculate average heatmap
-bm_data_trafo_list = average_heatmap(bm_data_trafo_list)
+bm_data_trafo_avg = average_heatmap(bm_data_trafo_list)
 
 # Plot all transformed heatmaps on top of each other into one plot and the averaged heatmap
-fig = plot_average_heatmap(data_map_trafo_list,
-                           average_data_map,
-                           bm_grid_list,
-                           bm_grid_list[0],
+fig = plot_average_heatmap(bm_data_trafo_list,
+                           bm_data_trafo_avg,
+                           extended_grid,
                            median_contour)
 output_path = os.path.join(results_folder, 'AveragedBrillouinMaps')
 fig.savefig(output_path, dpi=300, bbox_inches='tight')
-fig.show()
-plt.close()
+#fig.show()
+#plt.close()

@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 from scipy.interpolate import interp1d
 
@@ -52,7 +51,7 @@ def match_contours(contours):
     matched_contours = [template_contour]  # Keep template as the first contour
     for contour in contours[1:]:
         shifted_contour = shift_contour(contour, template_contour)  # ToDO: Sometimes makes trafo matrix singular
-        matched_contour = match_contour_with_ellipse(shifted_contour, template_contour)
+        matched_contour, _, _, _ = match_contour_with_ellipse(shifted_contour, template_contour)
         matched_contours.append(matched_contour)
     return matched_contours, template_contour
 
@@ -85,9 +84,10 @@ def match_contour_with_ellipse(A, B):
         rotation_angle = rotation_angle - 180
     elif rotation_angle < -90:
         rotation_angle = rotation_angle + 180
-    A_rotated = rotate_contour(A, np.deg2rad(rotation_angle), center_A)
+    rotation_angle = np.deg2rad(rotation_angle)
+    A_rotated = rotate_coordinate_system(A, rotation_angle, center_A)
 
-    return A_rotated + (center_B - center_A)
+    return A_rotated + (center_B - center_A), rotation_angle, center_A, center_B
 
 
 def fit_ellipse(contour):
@@ -97,7 +97,7 @@ def fit_ellipse(contour):
     return cv2.fitEllipse(contour.astype(np.float32))
 
 
-def rotate_contour(contour, angle, center):
+def rotate_coordinate_system(contour, angle, center):
     """Rotate the contour around a center point by a specified angle."""
     R = np.array([[np.cos(angle), -np.sin(angle)],
                   [np.sin(angle), np.cos(angle)]])
@@ -109,34 +109,6 @@ def calculate_median_contour(contours):
     contour = np.median(np.array(contours), axis=0)
     contour[-1, :] = contour[0, :]  # Close contour
     return contour
-
-
-def plot_contours(median_contour, template_contour, matched_contours):
-    """Plot the template, matched contours, and the median contour"""
-    fig = plt.figure(figsize=(8, 8))
-
-    # Plot the template contour
-    plt.plot(template_contour[:, 0], template_contour[:, 1], 'g-', linewidth=2, label='Mask (Template)')
-    plt.scatter(template_contour[0, 0], template_contour[0, 1], color='orange', s=12, label='First contour coordinate')
-
-    # Plot the matched contours (only label the first one)
-    for i, contour in enumerate(matched_contours[1:]):
-        if i == 0:
-            plt.plot(contour[:, 0], contour[:, 1], 'b-', label='Masks (Matched)')
-            plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
-        else:
-            plt.plot(contour[:, 0], contour[:, 1], 'b-')  # No label for subsequent contours
-            plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
-
-    # Plot the median contour
-    plt.plot(median_contour[:, 0], median_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
-
-    plt.gca().invert_yaxis()
-    plt.legend()
-    plt.axis('equal')
-    plt.title('Path Density with Contours')
-
-    return fig
 
 
 # ToDo: Implement choice of contour template

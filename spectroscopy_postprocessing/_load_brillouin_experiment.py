@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
 import re
 import pandas as pd
@@ -97,35 +96,6 @@ def get_mask(folder_path):
         return None
 
 
-def plot_brillouin_maps(background_image, bm_data, bm_metadata, folder_name):
-    fig, ax = plt.subplots()
-
-    brillouin_grid = bm_metadata['brillouin_grid']
-    scanner_pos = bm_metadata['scanner']
-
-    ax.imshow(background_image, cmap='gray', aspect='equal')
-    heatmap = ax.scatter(brillouin_grid[:, :, 0, 0],  # Use x-y grid of first z-slice
-                         brillouin_grid[:, :, 0, 1],
-                         c=bm_data['brillouin_shift_f_proj'],
-                         cmap='viridis',
-                         s=15,
-                         alpha=0.75,
-                         vmax=5.45,
-                         vmin=5.10
-                         )
-
-    ax.scatter(scanner_pos[0, 0], scanner_pos[0, 1], s=15, c='red', label='Scanner position')
-    ax.set_title(f'{folder_name}', fontsize=10)
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    # Add colorbar
-    cbar = fig.colorbar(heatmap, ax=ax)
-    cbar.set_label('Brillouin shift (GHz)')
-
-    return fig
-
-
 def load_brillouin_experiment(folder_path):
     # Load Brillouin metadata file
     bm_h5_path = os.path.join(folder_path, 'RawData', 'Brillouin.h5')
@@ -157,3 +127,32 @@ def load_brillouin_experiment(folder_path):
     mask = get_mask(folder_path)
 
     return bm_data_rep, bm_metadata_rep, bf_data_rep, bf_metadata_rep, mask
+
+
+def load_afm_experiment(folder_path):
+    # Load the CSV data file and background image
+    data_path = os.path.join(folder_path, 'region analysis', 'data.csv')
+    data = pd.read_csv(data_path)
+
+    img_path = os.path.join(folder_path, 'Pics', 'calibration', 'overview.tif')
+    img = Image.open(img_path).convert('L')
+    img = np.array(img)
+
+    # Load mask
+    mask_path = os.path.join(folder_path, 'Pics', 'calibration')
+    orientation = []
+    if os.path.exists(os.path.join(mask_path, 'brain_outline_OriLeft.png')):
+        orientation.append('left')
+        mask_path = os.path.join(mask_path, 'brain_outline_OriLeft.png')
+
+    elif os.path.exists(os.path.join(mask_path, 'brain_outline_OriRight.png')):
+        orientation.append('right')
+        mask_path = os.path.join(mask_path, 'brain_outline_OriRight.png')
+    else:
+        print(f'No matching mask was found for {folder_path}!')
+        exit()
+
+    mask = Image.open(mask_path).convert('L')  # Load mask in grayscale
+    mask = np.array(mask) / 255.0  # Normalize mask (1 inside ROI, 0 outside)
+
+    return data, img, mask
