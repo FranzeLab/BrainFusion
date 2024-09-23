@@ -3,6 +3,7 @@ import matplotlib.path as mpath
 import os.path
 import h5py
 import threading
+from scipy.spatial.distance import pdist
 
 
 def get_user_input(prompt, timeout=10):
@@ -127,6 +128,27 @@ def project_brillouin_dataset(bm_data):
     for key, value in bm_data.items():
         new_value = value.copy()  # Copy the original data to avoid modifying it
         new_value[new_value < 4.4] = np.nan
-        bm_data_proj[key + '_proj'] = np.max(new_value, axis=-1)  # Store the projection
+        proj_value = np.max(new_value, axis=-1).ravel()
+
+        bm_data_proj[key + '_proj'] = proj_value  # Store the projection
 
     return bm_data_proj
+
+
+def scatter_with_touching_squares(x, y, plot_size=0):
+    # Compute pairwise distances between points
+    coords = np.vstack([x, y]).T
+    pairwise_distances = pdist(coords)
+    mask = ~np.isclose(pairwise_distances, 0)
+    pairwise_distances = pairwise_distances[mask]
+
+    # Find the minimum distance between any two points
+    min_distance = np.min(pairwise_distances)
+
+    # Calculate the size of the squares to make them touch but not overlap
+    desired_size = min_distance / 2  # Size in coordinate units
+
+    # Set the marker size (area) for squares
+    marker_size = (desired_size ** 2) * np.pi
+
+    return marker_size

@@ -1,17 +1,14 @@
 import matplotlib.pyplot as plt
-import numpy as np
+from _utilis import scatter_with_touching_squares
 
 
-def plot_brillouin_maps(background_image, bm_data, bm_metadata, folder_name):
+def plot_brillouin_maps(background_image, bm_data, bm_grid, folder_name):
     fig, ax = plt.subplots()
 
-    brillouin_grid = bm_metadata['brillouin_grid']
-    scanner_pos = bm_metadata['scanner']
-
     ax.imshow(background_image, cmap='gray', aspect='equal')
-    heatmap = ax.scatter(brillouin_grid[:, :, 0, 0],  # Use x-y grid of first z-slice
-                         brillouin_grid[:, :, 0, 1],
-                         c=bm_data['brillouin_shift_f_proj'],
+    heatmap = ax.scatter(bm_grid[:, 0],  # Use x-y grid of first z-slice
+                         bm_grid[:, 1],
+                         c=bm_data,
                          cmap='viridis',
                          s=15,
                          alpha=0.75,
@@ -19,7 +16,6 @@ def plot_brillouin_maps(background_image, bm_data, bm_metadata, folder_name):
                          vmin=5.10
                          )
 
-    ax.scatter(scanner_pos[0, 0], scanner_pos[0, 1], s=15, c='red', label='Scanner position')
     ax.set_title(f'{folder_name}', fontsize=10)
     ax.set_xticks([])
     ax.set_yticks([])
@@ -56,15 +52,8 @@ def plot_afm_maps(background_image, data, grid, folder_name):
     return fig
 
 
-
 def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, bm_data_trafo_list,
-                   bm_metadata, bm_grid_trafo, extended_grid):
-    grid_points = bm_metadata['brillouin_grid'][:, :, 0, :]  # Use x-y grid of first z-slice
-
-    # Create raveled grid points
-    grid_points_rav = np.vstack([grid_points[:, :, 0].ravel(), grid_points[:, :, 1].ravel()]).T
-    grid_points_trafo_rav = np.vstack([bm_grid_trafo[:, :, 0].ravel(), bm_grid_trafo[:, :, 1].ravel()]).T
-
+                   bm_grid_points, grid_points_trafo, extended_grid):
     # Create subplots with two side-by-side plots
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -75,17 +64,17 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
     axes[0].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
 
     # Original grid
-    axes[0].scatter(grid_points_rav[:, 0],
-                    grid_points_rav[:, 1],
-                    c=bm_data['brillouin_shift_f_proj'],
-                    cmap='hot',
+    axes[0].scatter(bm_grid_points[:, 0],
+                    bm_grid_points[:, 1],
+                    c=bm_data,
+                    cmap='viridis',
                     s=15,
                     label='Original Grid',
                     alpha=1)
 
     axes[0].invert_yaxis()
     axes[0].legend()
-    axes[0].set_title('Original Brillouin data map')
+    axes[0].set_title('Original data map')
     axes[0].grid()
     axes[0].axis('equal')
 
@@ -96,31 +85,31 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
     axes[1].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
 
     # Original and deformed data
-    axes[1].scatter(grid_points_trafo_rav[:, 0],
-                    grid_points_trafo_rav[:, 1],
-                    c=bm_data['brillouin_shift_f_proj'],
+    axes[1].scatter(grid_points_trafo[:, 0],
+                    grid_points_trafo[:, 1],
+                    c=bm_data,
                     cmap='viridis',
                     s=15,
                     label='Transformed Grid (New coordinates)',
-                    alpha=0)
-    axes[1].scatter(extended_grid[:, :, 0],
-                    extended_grid[:, :, 1],
-                    c=bm_data_trafo_list['brillouin_shift_f_proj_trafo'],
+                    alpha=1)
+    axes[1].scatter(extended_grid[:, 0],
+                    extended_grid[:, 1],
+                    c=bm_data_trafo_list,
                     cmap='viridis',
                     s=15,
                     label='Transformed Grid (Griddata)',
-                    alpha=1)
+                    alpha=0)
 
     axes[1].invert_yaxis()
     axes[1].legend()
-    axes[1].set_title('Transformed Brillouin data map')
+    axes[1].set_title('Transformed data map')
     axes[1].grid()
     axes[1].axis('equal')
 
-    axes[0].set_xlim([0, 1023])
-    axes[0].set_ylim([200, 1023])
-    axes[1].set_xlim([0, 1023])
-    axes[1].set_ylim([200, 1023])
+    #axes[0].set_xlim([0, 1023])
+    #axes[0].set_ylim([200, 1023])
+    #axes[1].set_xlim([0, 1023])
+    #axes[1].set_ylim([200, 1023])
 
     # Adjust layout to avoid overlap
     plt.tight_layout()
@@ -149,7 +138,7 @@ def plot_cont_func_afm(original_contour, deformed_contour, trafo_contour, data, 
 
     axes[0].invert_yaxis()
     axes[0].legend()
-    axes[0].set_title('Original Brillouin data map')
+    axes[0].set_title('Original AFM data map')
     axes[0].grid()
     axes[0].axis('equal')
 
@@ -215,8 +204,7 @@ def plot_contours(median_contour, template_contour, matched_contours):
     return fig
 
 
-
-def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour):
+def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_variable):
     # Create subplots with two side-by-side plots
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -227,23 +215,23 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour):
     # Heatmaps
     for i, data_map in enumerate(data_maps[1:]):
         if i == 0:
-            axes[0].scatter(grid[:, :, 0],
-                            grid[:, :, 1],
-                            c=data_map['brillouin_shift_f_proj_trafo'],
+            axes[0].scatter(grid[:, 0],
+                            grid[:, 1],
+                            c=data_map[data_variable],
                             cmap='viridis',
-                            s=1,
+                            s=25,
                             label='Transformed Grid',
-                            alpha=1)
+                            alpha=0.1)
         else:
-            axes[0].scatter(grid[:, :, 0],
-                            grid[:, :, 1],
-                            c=data_map['brillouin_shift_f_proj_trafo'],
+            axes[0].scatter(grid[:, 0],
+                            grid[:, 1],
+                            c=data_map[data_variable],
                             cmap='viridis',
-                            s=1,
-                            alpha=1)
+                            s=25,
+                            alpha=0.1)
 
     axes[0].legend()
-    axes[0].set_title('Overlayed Brillouin maps of transformed spatial maps')
+    axes[0].set_title('Layered data maps of transformed spatial maps')
     axes[0].grid()
     axes[0].axis('equal')
 
@@ -252,16 +240,16 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour):
     axes[1].plot(average_contour[:, 0], average_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
 
     # Original and deformed data
-    axes[1].scatter(grid[:, :, 0],
-                    grid[:, :, 1],
+    axes[1].scatter(grid[:, 0],
+                    grid[:, 1],
                     c=data_map_avg,
                     cmap='viridis',
-                    s=1,
+                    s=25,
                     label='Transformed Grid',
                     alpha=1)
 
     axes[1].legend()
-    axes[1].set_title('Average Brillouin shift of transformed spatial maps')
+    axes[1].set_title('Average data map of transformed spatial maps')
     axes[1].grid()
     axes[1].axis('equal')
 

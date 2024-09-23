@@ -12,14 +12,18 @@ def choose_rep_number(rep_numbers):
     if len(rep_numbers) == 1:
         chosen_rep = int(rep_numbers[0])
     else:
-        # User input to select replicate
-        user_input = get_user_input(f'Please enter a replicate number from: {rep_numbers} '
-                                    f'(timeout in 10 seconds): ', timeout=0)  # ToDo: Change back for analysis
-        if user_input and user_input.isdigit() and int(user_input) in rep_numbers:
-            chosen_rep = int(user_input)
-        else:
+        try:
+            user_input = get_user_input(f'Please enter a replicate number from: {rep_numbers} '
+                                        f'(timeout in 10 seconds): ', timeout=10)
+            if user_input and user_input.isdigit() and int(user_input) in rep_numbers:
+                chosen_rep = int(user_input)
+                print(f'Valid input received. Script will continue!')
+            else:
+                raise ValueError("Invalid input or no input provided.")
+        except:
+            # If user fails to provide valid input, choose the max
             chosen_rep = np.max(rep_numbers)
-            print(f'Please provide a valid input!')
+            print(f'No valid input received. Defaulting to max replicate: {chosen_rep}')
 
     return chosen_rep
 
