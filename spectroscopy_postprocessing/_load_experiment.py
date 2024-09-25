@@ -2,8 +2,9 @@ import os
 import numpy as np
 from PIL import Image
 import re
+from scipy.ndimage import rotate
 import pandas as pd
-from _utilis import get_h5metadata, get_user_input
+from _utilis import get_h5metadata, get_user_input, rotate3Dgrid
 
 
 def choose_rep_number(rep_numbers):
@@ -43,7 +44,7 @@ def get_brillouin_data(bm_path):
 
             # Read the CSV file
             file_path = os.path.join(bm_path, filename)
-            data_slice = pd.read_csv(file_path, skiprows=2, header=None).to_numpy()
+            data_slice = pd.read_csv(file_path, skiprows=2, header=None).to_numpy().T
             data_slice = np.expand_dims(data_slice, axis=-1)  # Shape becomes (rows, cols, 1)
 
             # Initialize the variable dictionary if it doesn't exist
@@ -130,14 +131,32 @@ def load_brillouin_experiment(folder_path):
     # Load mask
     mask = get_mask(folder_path)
 
+    # Rotate brightfield image
+    bf_data_rep = np.rot90(bf_data_rep, 3)
+
+    # Rotate the data grid and map
+    grid = bm_metadata_rep['brillouin_grid']
+    grid_rav = np.column_stack([grid[:, :, :, 0].ravel(), grid[:, :, :, 1].ravel(), grid[:, :, :, 2].ravel()])
+    x_center, y_center = ((bf_data_rep.shape[0] - 1) / 2, (bf_data_rep.shape[1] - 1) / 2)
+    grid_rot = rotate3Dgrid(grid_rav, 90, x_center, y_center)
+    bm_metadata_rep['brillouin_grid'] = grid_rot.reshape(grid.shape[0], grid.shape[1], grid.shape[2], 3)
+
+    mask = np.rot90(mask, 3)
+
     return bm_data_rep, bm_metadata_rep, bf_data_rep, bf_metadata_rep, mask
 
 
 def load_afm_experiment(folder_path):
-    # Load the CSV data file and background image
+    # Load the AFM CSV file and extract data and grid coordinates
     data_path = os.path.join(folder_path, 'region analysis', 'data.csv')
     data = pd.read_csv(data_path)
+    afm_data = {'modulus': data['modulus'], 'beta_pyforce': data['beta_pyforce'],
+                'k0_pyforce': data['k0_pyforce'], 'k_pyforce': data['k_pyforce']}
+    afm_data = {key: np.array(value) for key, value in afm_data.items()}
 
+    afm_grid = np.stack((np.array(data['x_image']), np.array(data['y_image'])), axis=-1)
+
+    # Load background image
     img_path = os.path.join(folder_path, 'Pics', 'calibration', 'overview.tif')
     img = Image.open(img_path).convert('L')
     img = np.array(img)
@@ -147,16 +166,24 @@ def load_afm_experiment(folder_path):
     orientation = []
     if os.path.exists(os.path.join(mask_path, 'brain_outline_OriLeft.png')):
         orientation.append('left')
+
+        img = np.flipud(img)
+        afm_grid[:, 1] = img.shape[0] - afm_grid[:, 1]
+
         mask_path = os.path.join(mask_path, 'brain_outline_OriLeft.png')
+        mask = Image.open(mask_path).convert('L')  # Load mask in grayscale
+        mask = np.array(mask) / 255.0  # Normalize mask (1 inside ROI, 0 outside)
+        mask = np.flipud(mask)
 
     elif os.path.exists(os.path.join(mask_path, 'brain_outline_OriRight.png')):
         orientation.append('right')
+
         mask_path = os.path.join(mask_path, 'brain_outline_OriRight.png')
+        mask = Image.open(mask_path).convert('L')  # Load mask in grayscale
+        mask = np.array(mask) / 255.0  # Normalize mask (1 inside ROI, 0 outside)
+
     else:
         print(f'No matching mask was found for {folder_path}!')
         exit()
 
-    mask = Image.open(mask_path).convert('L')  # Load mask in grayscale
-    mask = np.array(mask) / 255.0  # Normalize mask (1 inside ROI, 0 outside)
-
-    return data, img, mask
+    return afm_data, afm_grid, img, mask

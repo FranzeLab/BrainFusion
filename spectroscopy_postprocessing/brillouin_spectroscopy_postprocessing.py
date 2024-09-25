@@ -6,7 +6,7 @@ from _find_average_contour import find_average_contour
 from _transform_2Dmap import transform_map2contour, transform_grid2contour
 from _calculate_average_heatmap import average_heatmap
 from _utilis import project_brillouin_dataset
-from _plot_maps import plot_brillouin_maps, plot_contours, plot_cont_func, plot_average_heatmap
+from _plot_maps import plot_maps_on_image, plot_contours, plot_cont_func, plot_average_heatmap
 
 # Start analysis
 brillouin_raw_data = 'brillouin_shift_f'
@@ -63,10 +63,15 @@ for index, contour in enumerate(contours_list):
     contour_trafo_list.append(trafo_contour)
 
     # Plot regular heatmaps
-    fig = plot_brillouin_maps(bf_data_list[index],
-                              bm_data_list[index][f'{brillouin_raw_data}_proj'],
-                              bm_grid_list[index],
-                              folder_names[index])
+    fig = plot_maps_on_image(bf_data_list[index],
+                             bm_data_list[index][f'{brillouin_raw_data}_proj'],
+                             bm_grid_list[index],
+                             folder_names[index],
+                             label='Brillouin shift (GHz)',
+                             cmap='viridis',
+                             marker_size=35,
+                             vmax=5.45,
+                             vmin=5.10)
     output_path = os.path.join(results_folder, f'{folder_names[index]}.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     # fig.show()
@@ -91,11 +96,13 @@ for index, contour in enumerate(contours_list):
 bm_data_trafo_avg = average_heatmap(bm_data_trafo_list, f'{brillouin_raw_data}_proj_trafo')
 
 # Plot all transformed heatmaps on top of each other into one plot and the averaged heatmap
+
 fig = plot_average_heatmap(bm_data_trafo_list,
                            bm_data_trafo_avg,
                            extended_grid,
                            median_contour,
-                           f'{brillouin_raw_data}_proj_trafo')
+                           f'{brillouin_raw_data}_proj_trafo',
+                           marker_size=60)
 output_path = os.path.join(results_folder, 'AveragedBrillouinMaps.png')
 fig.savefig(output_path, dpi=300, bbox_inches='tight')
 # fig.show()

@@ -28,11 +28,7 @@ def mask_contour(contour, grid):
     path = mpath.Path(contour)
 
     # Find which points are inside the contour
-    points = np.vstack((grid[:, :, 0].ravel(), grid[:, :, 1].ravel())).T
-    mask_points = path.contains_points(points)
-
-    # Reshape the result back to the shape of the mask
-    mask = mask_points.reshape(grid[:, :, 0].shape)
+    mask = path.contains_points(grid)
 
     return mask
 
@@ -152,3 +148,24 @@ def scatter_with_touching_squares(x, y, plot_size=0):
     marker_size = (desired_size ** 2) * np.pi
 
     return marker_size
+
+
+def rotate3Dgrid(grid, angle, center_x, center_y):
+    # Convert angle to radians
+    theta = np.radians(angle)
+
+    # Create rotation matrix based on the specified axis
+    rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
+                                [np.sin(theta), np.cos(theta), 0],
+                                [0, 0, 1]])
+
+    # Shift grid to rotation center and rotate
+    center = np.array([center_x, center_y, 0])
+    translated_grid = grid - center
+    rotated_grid = np.dot(translated_grid, rotation_matrix.T)
+
+    # Shift back to original center
+    rotated_grid += center
+
+    return rotated_grid
+

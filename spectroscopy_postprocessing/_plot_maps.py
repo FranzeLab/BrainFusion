@@ -1,19 +1,23 @@
 import matplotlib.pyplot as plt
-from _utilis import scatter_with_touching_squares
+import numpy as np
+from _utilis import mask_contour, scatter_with_touching_squares
 
 
-def plot_brillouin_maps(background_image, bm_data, bm_grid, folder_name):
+def plot_maps_on_image(img, data, grid, folder_name, label='Brillouin shift (GHz)', cmap='viridis', marker_size=15,
+                       vmax=None, vmin=None):
+    # Create figure and axis
     fig, ax = plt.subplots()
 
-    ax.imshow(background_image, cmap='gray', aspect='equal')
-    heatmap = ax.scatter(bm_grid[:, 0],  # Use x-y grid of first z-slice
-                         bm_grid[:, 1],
-                         c=bm_data,
-                         cmap='viridis',
-                         s=15,
+    # Plot background image and heatmap
+    ax.imshow(img, cmap='gray', aspect='equal', origin='lower')
+    heatmap = ax.scatter(grid[:, 0],
+                         grid[:, 1],
+                         c=data,
+                         cmap=cmap,
+                         s=marker_size,
                          alpha=0.75,
-                         vmax=5.45,
-                         vmin=5.10
+                         vmax=vmin,
+                         vmin=vmax
                          )
 
     ax.set_title(f'{folder_name}', fontsize=10)
@@ -22,32 +26,7 @@ def plot_brillouin_maps(background_image, bm_data, bm_grid, folder_name):
 
     # Add colorbar
     cbar = fig.colorbar(heatmap, ax=ax)
-    cbar.set_label('Brillouin shift (GHz)')
-
-    return fig
-
-
-def plot_afm_maps(background_image, data, grid, folder_name):
-    # Create figure and axis
-    fig, ax = plt.subplots()
-
-    ax.imshow(background_image, origin='lower', cmap='gray', aspect='equal')
-
-    # Plot heatmap
-    heatmap = ax.scatter(grid[:, 0],
-                         grid[:, 1],
-                         c=data,
-                         cmap='hot',
-                         s=5,
-                         alpha=0.75
-                         )
-    ax.set_title(f'{folder_name}', fontsize=10)
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    # Add a colorbar and label it
-    cbar = fig.colorbar(heatmap, ax=ax)
-    cbar.set_label('Reduced elastic modulus (Pa)')
+    cbar.set_label(label)
 
     return fig
 
@@ -72,7 +51,6 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
                     label='Original Grid',
                     alpha=1)
 
-    axes[0].invert_yaxis()
     axes[0].legend()
     axes[0].set_title('Original data map')
     axes[0].grid()
@@ -100,16 +78,15 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
                     label='Transformed Grid (Griddata)',
                     alpha=0)
 
-    axes[1].invert_yaxis()
     axes[1].legend()
     axes[1].set_title('Transformed data map')
     axes[1].grid()
     axes[1].axis('equal')
 
-    #axes[0].set_xlim([0, 1023])
-    #axes[0].set_ylim([200, 1023])
-    #axes[1].set_xlim([0, 1023])
-    #axes[1].set_ylim([200, 1023])
+    # axes[0].set_xlim([0, 1023])
+    # axes[0].set_ylim([200, 1023])
+    # axes[1].set_xlim([0, 1023])
+    # axes[1].set_ylim([200, 1023])
 
     # Adjust layout to avoid overlap
     plt.tight_layout()
@@ -136,7 +113,6 @@ def plot_cont_func_afm(original_contour, deformed_contour, trafo_contour, data, 
                     label='Original Grid',
                     alpha=1)
 
-    axes[0].invert_yaxis()
     axes[0].legend()
     axes[0].set_title('Original AFM data map')
     axes[0].grid()
@@ -164,7 +140,6 @@ def plot_cont_func_afm(original_contour, deformed_contour, trafo_contour, data, 
                     label='Transformed Grid (Interpolated on regular grid)',
                     alpha=0)
 
-    axes[1].invert_yaxis()
     axes[1].legend()
     axes[1].set_title('Transformed AFM data map')
     axes[1].grid()
@@ -196,7 +171,6 @@ def plot_contours(median_contour, template_contour, matched_contours):
     # Plot the median contour
     plt.plot(median_contour[:, 0], median_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
 
-    plt.gca().invert_yaxis()
     plt.legend()
     plt.axis('equal')
     plt.title('Path Density with Contours')
@@ -204,7 +178,8 @@ def plot_contours(median_contour, template_contour, matched_contours):
     return fig
 
 
-def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_variable):
+def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_variable, label='Brillouin shift (GHz)',
+                         cmap='viridis', marker_size=15, vmax=None, vmin=None, mask=True, distort=2):
     # Create subplots with two side-by-side plots
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -218,17 +193,21 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_va
             axes[0].scatter(grid[:, 0],
                             grid[:, 1],
                             c=data_map[data_variable],
-                            cmap='viridis',
-                            s=25,
+                            cmap=cmap,
+                            s=marker_size,
                             label='Transformed Grid',
-                            alpha=0.1)
+                            alpha=0.5,
+                            vmax=vmax,
+                            vmin=vmin)
         else:
-            axes[0].scatter(grid[:, 0],
-                            grid[:, 1],
+            axes[0].scatter(grid[:, 0] + np.random.randn(grid.shape[0]) * distort,
+                            grid[:, 1] + np.random.randn(grid.shape[0]) * distort,
                             c=data_map[data_variable],
-                            cmap='viridis',
-                            s=25,
-                            alpha=0.1)
+                            cmap=cmap,
+                            s=marker_size,
+                            alpha=0.5,
+                            vmax=vmax,
+                            vmin=vmin)
 
     axes[0].legend()
     axes[0].set_title('Layered data maps of transformed spatial maps')
@@ -239,19 +218,33 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_va
     # Median contour
     axes[1].plot(average_contour[:, 0], average_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
 
-    # Original and deformed data
-    axes[1].scatter(grid[:, 0],
-                    grid[:, 1],
-                    c=data_map_avg,
-                    cmap='viridis',
-                    s=25,
-                    label='Transformed Grid',
-                    alpha=1)
+    # Mask average data
+    assert type(mask) is bool, print('The provided mask argument is not boolean!')
+    if mask is True:
+        mask = mask_contour(average_contour, grid)
+    else:
+        mask = np.full(grid.shape[0], True)
+
+    # Average data
+    heatmap = axes[1].scatter(np.ma.masked_where(~mask, grid[:, 0]),
+                              np.ma.masked_where(~mask, grid[:, 1]),
+                              c=data_map_avg,
+                              cmap=cmap,
+                              s=marker_size,
+                              marker='s',
+                              label='Transformed Grid',
+                              alpha=1,
+                              vmax=vmax,
+                              vmin=vmin)
 
     axes[1].legend()
     axes[1].set_title('Average data map of transformed spatial maps')
     axes[1].grid()
     axes[1].axis('equal')
+
+    # Add colorbar
+    cbar = fig.colorbar(heatmap, ax=axes[1])
+    cbar.set_label(label)
 
     # Adjust layout to avoid overlap
     plt.tight_layout()

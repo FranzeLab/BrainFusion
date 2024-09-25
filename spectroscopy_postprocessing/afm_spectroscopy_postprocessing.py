@@ -5,7 +5,7 @@ from _load_experiment import load_afm_experiment
 from _find_average_contour import find_average_contour
 from _transform_2Dmap import transform_map2contour, transform_grid2contour
 from _calculate_average_heatmap import average_heatmap
-from _plot_maps import plot_afm_maps, plot_contours, plot_cont_func, plot_average_heatmap
+from _plot_maps import plot_maps_on_image, plot_contours, plot_cont_func, plot_average_heatmap
 
 # Start analysis
 afm_raw_data = 'modulus'
@@ -21,14 +21,11 @@ for folder_name in os.listdir(base_folder):
     if os.path.isdir(folder_path) and ('#' in folder_name):
         folder_names.append(folder_name)
 
-        afm_data_full, bf_data, mask = load_afm_experiment(folder_path)
-        afm_data = {'modulus': afm_data_full['modulus'], 'beta_pyforce': afm_data_full['beta_pyforce'],
-                    'k0_pyforce': afm_data_full['k0_pyforce'], 'k_pyforce': afm_data_full['k_pyforce']}
-        afm_data = {key: np.array(value) for key, value in afm_data.items()}
+        afm_data, afm_grid, bf_data, mask = load_afm_experiment(folder_path)
 
         # Save imported data
         afm_data_list.append(afm_data)
-        afm_grid_list.append(np.stack((afm_data_full['x_image'], afm_data_full['y_image']), axis=-1))
+        afm_grid_list.append(afm_grid)
         bf_data_list.append(bf_data)
         mask_list.append(mask)
 
@@ -58,10 +55,14 @@ for index, contour in enumerate(contours_list):
     contour_trafo_list.append(trafo_contour)
 
     # Plot regular heatmaps
-    fig = plot_afm_maps(bf_data_list[index],
-                        afm_data_list[index][f'{afm_raw_data}'],
-                        afm_grid_list[index],
-                        folder_names[index])
+    fig = plot_maps_on_image(bf_data_list[index],
+                             afm_data_list[index][f'{afm_raw_data}'],
+                             afm_grid_list[index],
+                             folder_names[index],
+                             label='Reduced elastic modulus (Pa)',
+                             cmap='hot',
+                             marker_size=5
+                             )
     output_path = os.path.join(results_folder, f'{folder_names[index]}.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     # fig.show()
@@ -90,7 +91,10 @@ fig = plot_average_heatmap(bm_data_trafo_list,
                            bm_data_trafo_avg,
                            extended_grid,
                            median_contour,
-                           f'{afm_raw_data}_trafo')
+                           f'{afm_raw_data}_trafo',
+                           label='Reduced elastic modulus (Pa)',
+                           cmap='hot',
+                           marker_size=140)
 output_path = os.path.join(results_folder, 'AveragedAFMMaps.png')
 fig.savefig(output_path, dpi=300, bbox_inches='tight')
 # fig.show()
