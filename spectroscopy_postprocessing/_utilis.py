@@ -119,16 +119,19 @@ def get_h5metadata(h5_path, data_var):
 
 
 # ToDo: Implement more elaborate analysis method
-def project_brillouin_dataset(bm_data):
+def project_brillouin_dataset(bm_data, bm_metadata):
     bm_data_proj = {}
     for key, value in bm_data.items():
         new_value = value.copy()  # Copy the original data to avoid modifying it
-        new_value[new_value < 4.4] = np.nan
-        proj_value = np.max(new_value, axis=-1).ravel()
+        new_value[new_value < 4.4] = np.nan  # ToDo: Filter peaks using intensity instead
+        proj_value = np.median(new_value, axis=-1).ravel()  # ToDo: REMOVED JUST FOR TESTING
 
         bm_data_proj[key + '_proj'] = proj_value  # Store the projection
 
-    return bm_data_proj
+    bm_grid_proj = bm_metadata['brillouin_grid'][:, :, 0, :2]  # Use x,y grid of first z-slice
+    bm_grid_proj = np.column_stack([bm_grid_proj[:, :, 0].ravel(), bm_grid_proj[:, :, 1].ravel()])
+
+    return bm_data_proj, bm_grid_proj
 
 
 def scatter_with_touching_squares(x, y, plot_size=0):
@@ -169,3 +172,62 @@ def rotate3Dgrid(grid, angle, center_x, center_y):
 
     return rotated_grid
 
+
+def export_analysis(filename, data, grid, contour, params):
+    with h5py.File(filename, 'w') as h5file:
+        # Create a group for data
+        data_group = h5file.create_group('Analysis')
+
+        # Mask nan values
+        data_nan_mask = np.isnan(data)
+
+        # Save data
+        data_group.create_dataset('data_nan_mask', data=data_nan_mask)
+        data_group.create_dataset('data', data=data)
+        data_group.create_dataset('grid', data=grid)
+        data_group.create_dataset('contour', data=contour)
+
+        # Save parameters as attributes
+        for key, value in params.items():
+            if key == 'load_experiment_func':
+                continue
+            elif key in ['vmax', 'vmin']:
+                if value is None:
+                    value = np.nan
+
+            data_group.attrs[key] = value
+
+    print(f"Results and parameters saved in {filename}.")
+
+
+def load_h5_file(path):
+    params = {}
+
+    # Load the HDF5 file
+    with h5py.File(path, 'r') as h5file:
+        # Access the 'Analysis' group
+        data_group = h5file['Analysis']
+
+        # Extract data
+        data = data_group['data'][:]
+        grid = data_group['grid'][:]
+        contour = data_group['contour'][:]
+
+        # Apply nan mask
+        data_nan_mask = data_group['data_nan_mask'][:]
+        data[data_nan_mask] = np.nan
+
+        # Extract parameters
+        for key in data_group.attrs.keys():
+            value = data_group.attrs[key]
+            if key in ['vmax', 'vmin'] and np.isnan(value):
+                value = None
+
+            # Handle NaN conversion if necessary
+            if isinstance(value, bytes):
+                value = value.decode('utf-8')  # Decode if it's a byte string
+
+            params[key] = value
+
+    print(f"Data loaded from {path}.")
+    return data, grid, contour, params

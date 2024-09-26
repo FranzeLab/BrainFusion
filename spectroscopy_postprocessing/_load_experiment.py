@@ -125,7 +125,6 @@ def load_brillouin_experiment(folder_path):
 
     # Choose replicate number and apply to metadata and data dicts
     bf_chosen_rep = 0
-    bf_metadata_rep = bf_metadata[bf_chosen_rep]
     bf_data_rep = bf_data[bf_chosen_rep]
 
     # Load mask
@@ -143,7 +142,7 @@ def load_brillouin_experiment(folder_path):
 
     mask = np.rot90(mask, 3)
 
-    return bm_data_rep, bm_metadata_rep, bf_data_rep, bf_metadata_rep, mask
+    return bm_data_rep, bm_metadata_rep, bf_data_rep, mask
 
 
 def load_afm_experiment(folder_path):
