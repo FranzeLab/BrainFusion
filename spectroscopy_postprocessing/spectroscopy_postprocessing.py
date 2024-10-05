@@ -8,8 +8,8 @@ from _utils import project_brillouin_dataset, export_analysis, import_analysis, 
 from _br_afm_correlation import fit_coordinates_gmm, afm_brillouin_corr
 
 
-def process_experiment(experiment, base_folder, results_path, load_experiment_func, **kwargs):
-    os.makedirs(results_path, exist_ok=True)
+def process_experiment(experiment, base_folder, results_folder, load_experiment_func, **kwargs):
+    os.makedirs(results_folder, exist_ok=True)
 
     folder_names, data_list, grid_list, grid_shape_list = [], [], [], []
     bf_data_list, mask_list = [], []
@@ -37,7 +37,7 @@ def process_experiment(experiment, base_folder, results_path, load_experiment_fu
     # Calculate average mask and plot result
     med_contour, contours_list, template_contour, matched_contour_list = find_average_contour(mask_list)
     fig = plot_contours(med_contour, template_contour, matched_contour_list)
-    output_path = os.path.join(results_path, 'matched_mask_contours.png')
+    output_path = os.path.join(results_folder, 'matched_mask_contours.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 
@@ -131,8 +131,8 @@ else:
 # ToDo: CHECK if loading the dataset versus direct calculation yields different results!
 
 # Plot results for AFM and Brillouin experiments
-#plot_experiments(brillouin_analysis, **brillouin_params)
-#plot_experiments(afm_analysis, **afm_params)
+plot_experiments(brillouin_analysis, **brillouin_params)
+plot_experiments(afm_analysis, **afm_params)
 
 # Extract relevant data for correlation map calculation
 # ToDo: AFM and Brillouin grids in pixels and not µm!

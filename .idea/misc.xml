@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="BMicro_env" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="BMicro_env" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="spectroscopy_postpro" project-jdk-type="Python SDK" />
 </project>
