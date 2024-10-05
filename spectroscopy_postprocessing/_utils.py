@@ -118,13 +118,49 @@ def get_h5metadata(h5_path, data_var):
     return metadata_dict, reps
 
 
-# ToDo: Implement more elaborate analysis method
-def project_brillouin_dataset(bm_data, bm_metadata):
+def check_parameters(params_defined, params_loaded):
+    # Check if params variables differ
+    differences = {}
+    for key, value in params_defined.items():
+        if key == 'load_experiment_func':
+            continue
+        elif key in params_loaded:
+            if params_loaded[key] != value:
+                differences[key] = {
+                    'defined': value,
+                    'loaded': params_loaded[key]
+                }
+        else:
+            differences[key] = {
+                'defined': value,
+                'loaded': None
+            }
+
+    # Report differences
+    if differences:
+        print("Differences found between loaded parameters and defined parameters:")
+        for key, diff in differences.items():
+            print(f"{key}: Defined = {diff['defined']}, Loaded = {diff['loaded']}")
+
+
+def project_brillouin_dataset(bm_data, bm_metadata, br_intensity_threshold=15):
     bm_data_proj = {}
+    if 'brillouin_peak_intensity' in bm_data and 'brillouin_shift_f' in bm_data:
+        # Filter out invalid peaks
+        mask_peak = bm_data['brillouin_peak_intensity'] > br_intensity_threshold
+        # Filter out water shifts
+        mask_shift = (4.4 < bm_data['brillouin_shift_f']) & (bm_data['brillouin_shift_f'] < 9.0)
+
+        mask = mask_peak & mask_shift
+    else:
+        mask = True
     for key, value in bm_data.items():
+        if key == 'brillouin_peak_intensity':
+            continue
         new_value = value.copy()  # Copy the original data to avoid modifying it
-        new_value[new_value < 4.4] = np.nan  # ToDo: Filter peaks using intensity instead
-        proj_value = np.median(new_value, axis=-1).ravel()  # ToDo: REMOVED JUST FOR TESTING
+        new_value = np.where(mask, new_value, np.nan)
+
+        proj_value = np.nanmedian(new_value, axis=-1).ravel()
 
         bm_data_proj[key + '_proj'] = proj_value  # Store the projection
 

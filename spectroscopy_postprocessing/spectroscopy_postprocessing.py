@@ -1,17 +1,15 @@
 import os
 import matplotlib.pyplot as plt
-import numpy as np
 from _load_experiment import load_brillouin_experiment, load_afm_experiment
 from _find_average_contour import find_average_contour
 from _transform_2Dmap import transform_map2contour, transform_grid2contour
-from _plot_maps import plot_maps_on_image, plot_contours, plot_cont_func, plot_average_heatmap
-from _utilis import project_brillouin_dataset, export_analysis, import_analysis
+from _plot_maps import plot_contours, plot_experiments
+from _utils import project_brillouin_dataset, export_analysis, import_analysis, check_parameters
 from _br_afm_correlation import fit_coordinates_gmm, afm_brillouin_corr
 
 
-def process_experiment(experiment, base_folder, results_folder, raw_data_key, load_experiment_func, label, cmap,
-                       marker_size, vmin=None, vmax=None):
-    os.makedirs(results_folder, exist_ok=True)
+def process_experiment(experiment, base_folder, results_path, load_experiment_func, **kwargs):
+    os.makedirs(results_path, exist_ok=True)
 
     folder_names, data_list, grid_list, grid_shape_list = [], [], [], []
     bf_data_list, mask_list = [], []
@@ -37,17 +35,17 @@ def process_experiment(experiment, base_folder, results_folder, raw_data_key, lo
             mask_list.append(mask)
 
     # Calculate average mask and plot result
-    median_contour, contours_list, template_contour, matched_contour_list = find_average_contour(mask_list)
-    fig = plot_contours(median_contour, template_contour, matched_contour_list)
-    output_path = os.path.join(results_folder, 'matched_mask_contours.png')
+    med_contour, contours_list, template_contour, matched_contour_list = find_average_contour(mask_list)
+    fig = plot_contours(med_contour, template_contour, matched_contour_list)
+    output_path = os.path.join(results_path, 'matched_mask_contours.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 
     # Transform maps to average map
-    data_trafo_list, grid_trafo_list, contour_trafo_list = [], [], []
+    data_trafo_list, grid_trafo_list, contour_trafo_list, extended_grid = [], [], [], []
     for index, contour in enumerate(contours_list):
         # Transform original grid to coordinate system of deformed contour
-        trafo_grid_points, trafo_contour = transform_grid2contour(contour, median_contour, grid_list[index])
+        trafo_grid_points, trafo_contour = transform_grid2contour(contour, med_contour, grid_list[index])
 
         # Transform maps to deformed coordinate system and interpolate on rectangular grid
         data_trafo = {}
@@ -59,56 +57,8 @@ def process_experiment(experiment, base_folder, results_folder, raw_data_key, lo
         grid_trafo_list.append(trafo_grid_points)
         contour_trafo_list.append(trafo_contour)
 
-        # Plot regular heatmaps
-        fig = plot_maps_on_image(bf_data_list[index],
-                                 data_list[index][f'{raw_data_key}'],
-                                 grid_list[index],
-                                 folder_names[index],
-                                 label=label,
-                                 cmap=cmap,
-                                 marker_size=marker_size,
-                                 vmin=vmin,
-                                 vmax=vmax)
-        output_path = os.path.join(results_folder, f'{folder_names[index]}.png')
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
-        plt.close()
-
-        # Plot transformed heatmap and contours
-        fig = plot_cont_func(contour,
-                             median_contour,
-                             trafo_contour,
-                             data_list[index][f'{raw_data_key}'],
-                             data_trafo_list[index][f'{raw_data_key}_trafo'],
-                             grid_list[index],
-                             grid_trafo_list[index],
-                             extended_grid,
-                             label=label,
-                             cmap=cmap,
-                             marker_size=120,
-                             vmin=vmin,
-                             vmax=vmax)
-        output_path = os.path.join(results_folder, f'MeanContourTransformed_{folder_names[index]}.png')
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
-        plt.close()
-
     # Calculate average heatmap
-    grid_avg, data_median_dict = fit_coordinates_gmm(grid_trafo_list, data_list)
-
-    # Plot all transformed heatmaps and the averaged heatmap
-    fig = plot_average_heatmap(data_list,
-                               grid_trafo_list,
-                               data_median_dict,
-                               grid_avg,
-                               median_contour,
-                               f'{raw_data_key}',
-                               label=label,
-                               cmap=cmap,
-                               marker_size=120,
-                               vmin=vmin,
-                               vmax=vmax)
-    output_path = os.path.join(results_folder, f'Averaged_{raw_data_key.capitalize()}_Maps.png')
-    fig.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    grid_avg, data_median_dict = fit_coordinates_gmm(grid_trafo_list, data_list, same_maps=True, num_components='mean')
 
     # Creating the analysis dictionary
     structured_data = {}
@@ -125,10 +75,11 @@ def process_experiment(experiment, base_folder, results_folder, raw_data_key, lo
         }
 
     # Adding common data at folder level
-    structured_data['median_contour'] = median_contour
+    structured_data['median_contour'] = med_contour
     structured_data['template_contour'] = template_contour
     structured_data['average_data'] = data_median_dict
     structured_data['average_grid'] = grid_avg
+    structured_data['extended_grid'] = extended_grid
 
     return structured_data
 
@@ -142,9 +93,7 @@ brillouin_params = {
     "raw_data_key": 'brillouin_shift_f_proj',
     "label": 'Brillouin shift (GHz)',
     "cmap": 'viridis',
-    "marker_size": 35,
-    "vmin": None,
-    "vmax": None
+    "marker_size": 35
 }
 
 # Parameters for AFM data
@@ -156,9 +105,7 @@ afm_params = {
     "raw_data_key": 'modulus',
     "label": 'Reduced elastic modulus (Pa)',
     "cmap": 'hot',
-    "marker_size": 5,
-    "vmin": None,
-    "vmax": None
+    "marker_size": 5
 }
 
 # Process Brillouin data
@@ -167,7 +114,9 @@ if not os.path.exists(brillouin_analysis_path):
     brillouin_analysis = process_experiment(**brillouin_params)
     export_analysis(brillouin_analysis_path, brillouin_analysis, brillouin_params)
 else:
-    brillouin_analysis, brillouin_params = import_analysis(brillouin_analysis_path)
+    brillouin_analysis, brillouin_params_loaded = import_analysis(brillouin_analysis_path)
+    check_parameters(brillouin_params, brillouin_params_loaded)
+    brillouin_params = brillouin_params_loaded
 
 # Process AFM data
 afm_analysis_path = os.path.join(afm_params['results_folder'], 'AfmAnalysis.h5')
@@ -175,8 +124,15 @@ if not os.path.exists(afm_analysis_path):
     afm_analysis = process_experiment(**afm_params)
     export_analysis(afm_analysis_path, afm_analysis, afm_params)
 else:
-    afm_analysis, afm_params = import_analysis(afm_analysis_path)
+    afm_analysis, afm_params_loaded = import_analysis(afm_analysis_path)
+    check_parameters(afm_params, afm_params_loaded)
+    afm_params = afm_params_loaded
+
 # ToDo: CHECK if loading the dataset versus direct calculation yields different results!
+
+# Plot results for AFM and Brillouin experiments
+#plot_experiments(brillouin_analysis, **brillouin_params)
+#plot_experiments(afm_analysis, **afm_params)
 
 # Extract relevant data for correlation map calculation
 # ToDo: AFM and Brillouin grids in pixels and not µm!
@@ -187,7 +143,8 @@ afm_analysis['median_contour'] = afm_analysis['median_contour'] * afm_scale
 # Calculate correlation between AFM and Brillouin datasets
 results_folder = './correlation'
 os.makedirs(results_folder, exist_ok=True)
-correlation, median_contour, afm_data_interp, br_data_interp, grid_avg = afm_brillouin_corr(afm_analysis, afm_params,
-                                                                                            brillouin_analysis,
-                                                                                            brillouin_params,
-                                                                                            results_folder)
+correlation, median_contour, afm_data_interp, br_data_interp, grid_average = afm_brillouin_corr(afm_analysis,
+                                                                                                afm_params,
+                                                                                                brillouin_analysis,
+                                                                                                brillouin_params,
+                                                                                                results_folder)

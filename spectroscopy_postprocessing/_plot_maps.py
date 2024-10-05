@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from _utilis import mask_contour, scatter_with_touching_squares
+import os
+from _utils import mask_contour
 
 
 def plot_contours(median_contour, template_contour, matched_contours):
-    """Plot the template, matched contours, and the median contour"""
     fig = plt.figure(figsize=(8, 8))
 
     # Plot the template contour
@@ -127,7 +127,8 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
 
 
 def plot_average_heatmap(data_maps, grid_trafos, data_avg, grid_avg, average_contour, data_variable,
-                         label='Brillouin shift (GHz)', cmap='viridis', marker_size=15, vmin=None, vmax=None, mask=True):
+                         label='Brillouin shift (GHz)', cmap='viridis', marker_size=15, vmin=None, vmax=None,
+                         mask=True):
     # Create subplots with two side-by-side plots
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -216,7 +217,8 @@ def plot_corr_maps(median_contour, afm_map, brillouin_map, grid, mask=True, mark
     heatmap_brillouin = axes[0].scatter(np.ma.masked_where(~mask, grid[:, 0]),
                                         np.ma.masked_where(~mask, grid[:, 1]),
                                         c=afm_map,
-                                        cmap='hot',
+                                        marker='s',
+                                        cmap='magma',
                                         s=marker_size)
 
     axes[0].legend()
@@ -229,7 +231,8 @@ def plot_corr_maps(median_contour, afm_map, brillouin_map, grid, mask=True, mark
     heatmap_afm = axes[1].scatter(np.ma.masked_where(~mask, grid[:, 0]),
                                   np.ma.masked_where(~mask, grid[:, 1]),
                                   c=brillouin_map,
-                                  cmap='hot',
+                                  marker='s',
+                                  cmap='magma',
                                   s=marker_size,
                                   vmin=vmin,
                                   vmax=vmax)
@@ -250,3 +253,91 @@ def plot_corr_maps(median_contour, afm_map, brillouin_map, grid, mask=True, mark
     plt.tight_layout()
 
     return fig
+
+
+def plot_norm_corr(afm_norm, br_norm, correlation):
+    fig, ax = plt.subplots(figsize=(6, 6))  # Create a figure and axis
+    ax.scatter(afm_norm, br_norm, color='blue', s=10, label='Spatially Correlated Data')
+
+    # Fit a linear regression line
+    slope, intercept = np.polyfit(afm_norm, br_norm, 1)
+    regression_line = slope * afm_norm + intercept
+
+    # Calculate residuals and the standard error of the estimate
+    residuals = br_norm - regression_line
+    rse = np.sqrt(np.mean(residuals ** 2))
+
+    # Add the Pearson correlation value and RSE to the plot
+    ax.text(0.62, 0.9, f'Pearson: {np.round(correlation, 4)}\nRSE: {np.round(rse, 4)}',
+            fontsize=12, fontweight='bold', color='red', ha='left', transform=ax.transAxes,
+            bbox=dict(facecolor='white', alpha=0.75, edgecolor='red', boxstyle='round,pad=0.5'))
+
+    # Set labels and title with increased font size
+    ax.set_xlabel('Reduced Elastic Modulus (Norm)', fontsize=14)
+    ax.set_ylabel('Brillouin Shift (Norm)', fontsize=14)
+
+    # Show the plot
+    ax.grid(True)
+    ax.legend()
+
+    return fig
+
+
+def plot_experiments(analysis_file, results_folder, raw_data_key, label='', cmap='viridis', marker_size=20, vmin=None,
+                     vmax=None, **kwargs):
+    # Plot regular heatmaps
+    median_contour = analysis_file['median_contour']
+    avg_data = analysis_file['average_data']
+    avg_grid = analysis_file['average_grid']
+    extended_grid = analysis_file['extended_grid']
+    for exp_key, exp_value in analysis_file.items():
+        if '#' in exp_key:
+            fig = plot_maps_on_image(exp_value['brightfield_image'],
+                                     exp_value['raw_data'][f'{raw_data_key}'],
+                                     exp_value['raw_grid'],
+                                     exp_key,
+                                     label=label,
+                                     cmap=cmap,
+                                     marker_size=marker_size,
+                                     vmin=vmin,
+                                     vmax=vmax)
+            output_path = os.path.join(results_folder, f'{exp_key}.png')
+            fig.savefig(output_path, dpi=300, bbox_inches='tight')
+            plt.close()
+
+            # Plot transformed heatmap and contours
+            fig = plot_cont_func(exp_value['contour'],
+                                 median_contour,
+                                 exp_value['trafo_contour'],
+                                 exp_value['raw_data'][f'{raw_data_key}'],
+                                 exp_value['trafo_data'][f'{raw_data_key}_trafo'],
+                                 exp_value['raw_grid'],
+                                 exp_value['trafo_grid'],
+                                 extended_grid,
+                                 label=label,
+                                 cmap=cmap,
+                                 marker_size=120,
+                                 vmin=vmin,
+                                 vmax=vmax)
+            output_path = os.path.join(results_folder, f'MeanContourTransformed_{exp_key}.png')
+            fig.savefig(output_path, dpi=300, bbox_inches='tight')
+            plt.close()
+
+    # Plot all transformed heatmaps and the averaged heatmap
+    data_list = [value['raw_data'] for key, value in analysis_file.items() if '#' in key]
+    grid_trafo_list = [value['trafo_grid'] for key, value in analysis_file.items() if '#' in key]
+
+    fig = plot_average_heatmap(data_list,
+                               grid_trafo_list,
+                               avg_data,
+                               avg_grid,
+                               median_contour,
+                               f'{raw_data_key}',
+                               label=label,
+                               cmap=cmap,
+                               marker_size=120,
+                               vmin=vmin,
+                               vmax=vmax)
+    output_path = os.path.join(results_folder, f'Averaged_{raw_data_key.capitalize()}_Maps.png')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()

@@ -2,14 +2,12 @@ import os
 import numpy as np
 from PIL import Image
 import re
-from scipy.ndimage import rotate
 import pandas as pd
-from _utilis import get_h5metadata, get_user_input, rotate3Dgrid
+from _utils import get_h5metadata, get_user_input, rotate3Dgrid
 
 
 def choose_rep_number(rep_numbers):
     # Select Brillouin replicate if more than one available
-    chosen_rep = 0
     if len(rep_numbers) == 1:
         chosen_rep = int(rep_numbers[0])
     else:
@@ -21,7 +19,7 @@ def choose_rep_number(rep_numbers):
                 print(f'Valid input received. Script will continue!')
             else:
                 raise ValueError("Invalid input or no input provided.")
-        except:
+        except Exception:
             # If user fails to provide valid input, choose the max
             chosen_rep = np.max(rep_numbers)
             print(f'No valid input received. Defaulting to max replicate: {chosen_rep}')

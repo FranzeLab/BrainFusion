@@ -5,14 +5,18 @@ from sklearn.mixture import GaussianMixture
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
 from _find_average_contour import match_contours, calculate_median_contour
-from _transform_2Dmap import transform_map2contour, transform_grid2contour
-from _plot_maps import plot_contours, plot_cont_func, plot_corr_maps
-from scipy.stats import pearsonr, spearmanr
+from _transform_2Dmap import transform_grid2contour
+from _plot_maps import plot_contours, plot_corr_maps, plot_norm_corr
+from scipy.stats import pearsonr
 from sklearn.preprocessing import MinMaxScaler
 
 
-def fit_coordinates_gmm(grid_list, data_list, same_maps=True):
-    num_components = max(1, int(np.mean([len(grid) for grid in grid_list])))
+def fit_coordinates_gmm(grid_list, data_list, same_maps=True, num_components='mean'):
+    assert num_components in ['mean', 'min'], print('Please provide a valid metric for estimating the cluster numbers!')
+    if num_components == 'mean':
+        num_components = max(1, int(np.mean([len(grid) for grid in grid_list])))
+    elif num_components == 'min':
+        num_components = int(min(([len(grid) for grid in grid_list])))
     all_coords = np.vstack(grid_list)
     gmm = GaussianMixture(n_components=num_components, random_state=42)
     gmm.fit(all_coords)
@@ -77,8 +81,8 @@ def bin_and_correlate(data_map1, data_map2, grid_points, bin_size=4):
             current_indices = indices[i:i + bin_size]
 
             # Calculate the median values for both data maps
-            median1 = np.nanmean(data_map1[current_indices])
-            median2 = np.nanmean(data_map2[current_indices])
+            median1 = np.nanmedian(data_map1[current_indices])
+            median2 = np.nanmedian(data_map2[current_indices])
 
             median_map1.append(median1)
             median_map2.append(median2)
@@ -105,21 +109,7 @@ def bin_and_correlate(data_map1, data_map2, grid_points, bin_size=4):
     heatmap1_norm = normalize_heatmap(median_map1)
     heatmap2_norm = normalize_heatmap(median_map2)
 
-    # Plot the filtered data as a scatter plot
-    plt.figure(figsize=(6, 6))
-    plt.scatter(heatmap1_norm, heatmap2_norm, color='blue', label='Data points')
-
-    # Add labels and a title
-    plt.xlabel('Brillouin shift')
-    plt.ylabel('Reduced elastic modulus')
-    plt.title('Correlation plot')
-
-    # Show the plot
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-
-    return correlation
+    return correlation, heatmap1_norm, heatmap2_norm
 
 
 # Function to normalize heatmaps
@@ -152,7 +142,7 @@ def afm_brillouin_corr(afm_analysis, afm_params, br_analysis, br_params, results
     contours_list = [afm_contour, br_contour]
 
     # Circularly align and match contours using ellipse fitting
-    matched_contour_list, template_contour = match_contours(contours_list)
+    matched_contour_list, template_contour = match_contours(contours_list, template_index=0)
 
     # Calculate the median contour
     median_contour = calculate_median_contour(matched_contour_list)
@@ -175,7 +165,7 @@ def afm_brillouin_corr(afm_analysis, afm_params, br_analysis, br_params, results
     # Find new coordinates to compare both grids
     trafo_grid_list = [afm_trafo_grid, br_trafo_grid]
     data_list = [afm_data, br_data]
-    grid_avg, _ = fit_coordinates_gmm(trafo_grid_list, data_list, same_maps=False)
+    grid_avg, _ = fit_coordinates_gmm(trafo_grid_list, data_list, same_maps=False, num_components='min')
 
     # Transform data to new grid
     afm_data_interp, br_data_interp = {}, {}
@@ -190,7 +180,7 @@ def afm_brillouin_corr(afm_analysis, afm_params, br_analysis, br_params, results
                          brillouin_map=br_data_interp[br_key],
                          grid=grid_avg,
                          mask=True,
-                         marker_size=40,
+                         marker_size=150,
                          vmin=None,
                          vmax=None)
     output_path = os.path.join(results_folder, f'MapsComparison.png')
@@ -198,9 +188,15 @@ def afm_brillouin_corr(afm_analysis, afm_params, br_analysis, br_params, results
     plt.close()
 
     # Calculate correlation between maps
-    correlation = bin_and_correlate(afm_data_interp[afm_key],
-                                    br_data_interp[br_key],
-                                    grid_avg,
-                                    bin_size=1)
+    correlation, afm_norm, br_norm, = bin_and_correlate(afm_data_interp[afm_key],
+                                                        br_data_interp[br_key],
+                                                        grid_avg,
+                                                        bin_size=1)
+
+    # Plot normalized correlation
+    fig = plot_norm_corr(afm_norm, br_norm, correlation)
+    output_path = os.path.join(results_folder, f'BrillouinAFMCorrelationMap.png')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
 
     return correlation, median_contour, afm_data_interp, br_data_interp, grid_avg
