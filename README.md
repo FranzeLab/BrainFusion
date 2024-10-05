@@ -44,6 +44,8 @@ brillouin_params = {
 brillouin_analysis = process_experiment(**brillouin_params)
 ```
 
+![ContourDomainTrafo](https://github.com/user-attachments/assets/78436b3f-f4a1-4016-81ab-77465ef5f1e7)
+
 ## Functionality
 
     - Load AFM and Brillouin datasets.
