@@ -126,8 +126,8 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
     return fig
 
 
-def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_variable, label='Brillouin shift (GHz)',
-                         cmap='viridis', marker_size=15, vmin=None, vmax=None, mask=True, distort=2):
+def plot_average_heatmap(data_maps, grid_trafos, data_avg, grid_avg, average_contour, data_variable,
+                         label='Brillouin shift (GHz)', cmap='viridis', marker_size=15, vmin=None, vmax=None, mask=True):
     # Create subplots with two side-by-side plots
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -136,11 +136,11 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_va
     axes[0].plot(average_contour[:, 0], average_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
 
     # Heatmaps
-    for i, data_map in enumerate(data_maps[1:]):
+    for i, _ in enumerate(data_maps[1:]):
         if i == 0:
-            axes[0].scatter(grid[:, 0],
-                            grid[:, 1],
-                            c=data_map[data_variable],
+            axes[0].scatter(grid_trafos[i][:, 0],
+                            grid_trafos[i][:, 1],
+                            c=data_maps[i][data_variable],
                             cmap=cmap,
                             s=marker_size,
                             label='Transformed Grid',
@@ -148,9 +148,9 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_va
                             vmin=vmin,
                             vmax=vmax)
         else:
-            axes[0].scatter(grid[:, 0] + np.random.randn(grid.shape[0]) * distort,
-                            grid[:, 1] + np.random.randn(grid.shape[0]) * distort,
-                            c=data_map[data_variable],
+            axes[0].scatter(grid_trafos[i][:, 0],
+                            grid_trafos[i][:, 1],
+                            c=data_maps[i][data_variable],
                             cmap=cmap,
                             s=marker_size,
                             alpha=0.5,
@@ -169,14 +169,14 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_va
     # Mask average data
     assert type(mask) is bool, print('The provided mask argument is not boolean!')
     if mask is True:
-        mask = mask_contour(average_contour, grid)
+        mask = mask_contour(average_contour, grid_avg)
     else:
-        mask = np.full(grid.shape[0], True)
+        mask = np.full(grid_avg.shape[0], True)
 
     # Average data
-    heatmap = axes[1].scatter(np.ma.masked_where(~mask, grid[:, 0]),
-                              np.ma.masked_where(~mask, grid[:, 1]),
-                              c=data_map_avg,
+    heatmap = axes[1].scatter(np.ma.masked_where(~mask, grid_avg[:, 0]),
+                              np.ma.masked_where(~mask, grid_avg[:, 1]),
+                              c=data_avg[f'{data_variable}_median'],
                               cmap=cmap,
                               s=marker_size,
                               marker='s',
@@ -200,7 +200,7 @@ def plot_average_heatmap(data_maps, data_map_avg, grid, average_contour, data_va
     return fig
 
 
-def plot_corr_maps(median_contour, brillouin_map, afm_map, grid, mask=True, marker_size=40, vmin=None, vmax=None):
+def plot_corr_maps(median_contour, afm_map, brillouin_map, grid, mask=True, marker_size=40, vmin=None, vmax=None):
     # Mask average data
     assert type(mask) is bool, print('The provided mask argument is not boolean!')
     if mask is True:

@@ -173,19 +173,17 @@ def rotate3Dgrid(grid, angle, center_x, center_y):
     return rotated_grid
 
 
-def export_analysis(filename, data, grid, contour, params):
-    with h5py.File(filename, 'w') as h5file:
-        # Create a group for data
-        data_group = h5file.create_group('Analysis')
+def write_dict_in_h5(h5file, group_path, dic):
+    for key, item in dic.items():
+        if isinstance(item, dict):
+            write_dict_in_h5(h5file, f"{group_path}/{key}", item)
+        else:
+            h5file.create_dataset(f"{group_path}/{key}", data=item)
 
-        # Mask nan values
-        data_nan_mask = np.isnan(data)
 
-        # Save data
-        data_group.create_dataset('data_nan_mask', data=data_nan_mask)
-        data_group.create_dataset('data', data=data)
-        data_group.create_dataset('grid', data=grid)
-        data_group.create_dataset('contour', data=contour)
+def export_analysis(path, analysis, params):
+    with h5py.File(path, 'w') as h5file:
+        write_dict_in_h5(h5file, '/', analysis)
 
         # Save parameters as attributes
         for key, value in params.items():
@@ -195,39 +193,34 @@ def export_analysis(filename, data, grid, contour, params):
                 if value is None:
                     value = np.nan
 
-            data_group.attrs[key] = value
+            h5file.attrs[key] = value
 
-    print(f"Results and parameters saved in {filename}.")
+    print(f"Results and parameters saved in {path}.")
 
 
-def load_h5_file(path):
-    params = {}
+def read_dict_from_h5(h5file, group_path='/'):
+    result = {}
+    group = h5file[group_path]
 
-    # Load the HDF5 file
+    for key, item in group.items():
+        if isinstance(item, h5py.Group):
+            result[key] = read_dict_from_h5(h5file, f"{group_path}/{key}")
+        else:
+            result[key] = item[()]  # Reads dataset values
+
+    return result
+
+
+def import_analysis(path):
     with h5py.File(path, 'r') as h5file:
-        # Access the 'Analysis' group
-        data_group = h5file['Analysis']
+        # Load the analysis (stored in groups/datasets)
+        analysis = read_dict_from_h5(h5file, '/')
 
-        # Extract data
-        data = data_group['data'][:]
-        grid = data_group['grid'][:]
-        contour = data_group['contour'][:]
-
-        # Apply nan mask
-        data_nan_mask = data_group['data_nan_mask'][:]
-        data[data_nan_mask] = np.nan
-
-        # Extract parameters
-        for key in data_group.attrs.keys():
-            value = data_group.attrs[key]
-            if key in ['vmax', 'vmin'] and np.isnan(value):
-                value = None
-
-            # Handle NaN conversion if necessary
-            if isinstance(value, bytes):
-                value = value.decode('utf-8')  # Decode if it's a byte string
-
+        # Load parameters (stored as attributes)
+        params = {}
+        for key, value in h5file.attrs.items():
+            if isinstance(value, np.ndarray) and value.size == 1:
+                value = value.item()  # Convert single-element arrays to scalars
             params[key] = value
 
-    print(f"Data loaded from {path}.")
-    return data, grid, contour, params
+    return analysis, params
