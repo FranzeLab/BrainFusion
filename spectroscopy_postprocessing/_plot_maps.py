@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 import os
-from _utils import mask_contour
+from ._utils import mask_contour
+from shapely.geometry import Polygon, Point
 
 
 def plot_contours(median_contour, template_contour, matched_contours):
@@ -25,18 +27,29 @@ def plot_contours(median_contour, template_contour, matched_contours):
 
     plt.legend()
     plt.axis('equal')
-    plt.title('Path Density with Contours')
 
     return fig
 
 
-def plot_maps_on_image(img, data, grid, folder_name, label='Brillouin shift (GHz)', cmap='viridis', marker_size=15,
-                       vmin=None, vmax=None):
+def plot_maps_on_image(img, data, grid, folder_name, scale=1, label='Brillouin shift (GHz)', cmap='viridis', marker_size=15,
+                       vmin=None, vmax=None, log=False):
     # Create figure and axis
     fig, ax = plt.subplots()
 
+    # Scale image to µm
+    height_in_mu = img.shape[0] * scale
+    width_in_mu = img.shape[1] * scale
+
     # Plot background image and heatmap
-    ax.imshow(img, cmap='gray', aspect='equal', origin='lower')
+    ax.imshow(img, cmap='gray', aspect='equal', origin='lower',
+              extent=[0, width_in_mu, 0, height_in_mu])
+
+    # Use logarithmic normalization
+    if vmin or vmin:
+        norm = mcolors.LogNorm(vmin=vmin, vmax=vmax) if log else None
+    else:
+        norm = mcolors.LogNorm() if log else None
+
     heatmap = ax.scatter(grid[:, 0],
                          grid[:, 1],
                          c=data,
@@ -44,7 +57,8 @@ def plot_maps_on_image(img, data, grid, folder_name, label='Brillouin shift (GHz
                          s=marker_size,
                          alpha=0.75,
                          vmin=vmin,
-                         vmax=vmax
+                         vmax=vmax,
+                         norm=norm
                          )
 
     ax.set_title(f'{folder_name}', fontsize=10)
@@ -60,7 +74,7 @@ def plot_maps_on_image(img, data, grid, folder_name, label='Brillouin shift (GHz
 
 def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, bm_data_trafo_list,
                    bm_grid_points, grid_points_trafo, extended_grid, label='Brillouin shift (GHz)', cmap='viridis',
-                   marker_size=30, vmin=None, vmax=None):
+                   marker_size=30, vmin=None, vmax=None, mask=False):
     # Create subplots with two side-by-side plots
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -71,9 +85,23 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
     axes[0].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
 
     # Original grid
+    if mask:
+        polygon = Polygon(original_contour)
+        inside_points = []
+        inside_data = []
+
+        for i, point in enumerate(bm_grid_points):
+            if polygon.contains(Point(point)):
+                inside_points.append(point)
+                inside_data.append(bm_data[i])
+
+        bm_grid_points = np.array(inside_points)
+        bm_data_mask = np.array(inside_data)
+    else:
+        bm_data_mask = bm_data
     axes[0].scatter(bm_grid_points[:, 0],
                     bm_grid_points[:, 1],
-                    c=bm_data,
+                    c=bm_data_mask,
                     cmap=cmap,
                     s=marker_size,
                     label='Original Grid',
@@ -92,15 +120,31 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
     axes[1].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
 
     # Original and deformed data
+    if mask:
+        polygon = Polygon(deformed_contour)
+        inside_points = []
+        inside_data = []
+
+        for i, point in enumerate(grid_points_trafo):
+            if polygon.contains(Point(point)):
+                inside_points.append(point)
+                inside_data.append(bm_data[i])
+
+        grid_points_trafo = np.array(inside_points)
+        bm_data_mask = np.array(inside_data)
+    else:
+        bm_data_mask = bm_data
+
     heatmap_trafo_coords = axes[1].scatter(grid_points_trafo[:, 0],
                                            grid_points_trafo[:, 1],
-                                           c=bm_data,
+                                           c=bm_data_mask,
                                            cmap=cmap,
                                            s=marker_size,
                                            label='Transformed Grid (New coordinates)',
                                            alpha=1,
                                            vmin=vmin,
                                            vmax=vmax)
+
     heatmap_griddata = axes[1].scatter(extended_grid[:, 0],
                                        extended_grid[:, 1],
                                        c=bm_data_trafo_list,
@@ -114,7 +158,10 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
     axes[1].legend()
     axes[1].set_title('Transformed data map')
     axes[1].grid()
-    axes[1].axis('equal')
+
+    # Set axis limits to be the same for both plots
+    axes[1].set_xlim(axes[0].get_xlim())
+    axes[1].set_ylim(axes[0].get_ylim())
 
     # Plot colorbar
     cbar = fig.colorbar(heatmap_trafo_coords, ax=axes[1])
@@ -218,7 +265,7 @@ def plot_corr_maps(median_contour, afm_map, brillouin_map, grid, mask=True, mark
                                         np.ma.masked_where(~mask, grid[:, 1]),
                                         c=afm_map,
                                         marker='s',
-                                        cmap='magma',
+                                        cmap='hot',
                                         s=marker_size)
 
     axes[0].legend()
@@ -232,7 +279,7 @@ def plot_corr_maps(median_contour, afm_map, brillouin_map, grid, mask=True, mark
                                   np.ma.masked_where(~mask, grid[:, 1]),
                                   c=brillouin_map,
                                   marker='s',
-                                  cmap='magma',
+                                  cmap='hot',
                                   s=marker_size,
                                   vmin=vmin,
                                   vmax=vmax)
@@ -296,11 +343,13 @@ def plot_experiments(analysis_file, results_folder, raw_data_key, label='', cmap
                                      exp_value['raw_data'][f'{raw_data_key}'],
                                      exp_value['raw_grid'],
                                      exp_key,
+                                     scale=exp_value['pix_per_um'],
                                      label=label,
                                      cmap=cmap,
                                      marker_size=marker_size,
                                      vmin=vmin,
-                                     vmax=vmax)
+                                     vmax=vmax,
+                                     log=True)
             output_path = os.path.join(results_folder, f'{exp_key}.png')
             fig.savefig(output_path, dpi=300, bbox_inches='tight')
             plt.close()

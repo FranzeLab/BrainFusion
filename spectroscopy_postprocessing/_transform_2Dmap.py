@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import Rbf, griddata
 from scipy.spatial import cKDTree
-from _find_average_contour import match_contour_with_ellipse, rotate_coordinate_system
+from ._find_average_contour import match_contour_with_ellipse, rotate_coordinate_system
 
 
 # ToDo: Implement new interpolation function scipy.interpolate.RBFInterpolator
@@ -129,11 +129,10 @@ def transform_grid2contour(original_contour, deformed_contour, original_grid_poi
     return trafo_grid_points, trafo_contour
 
 
-def transform_map2contour(trafo_grid_points, bm_template_grid_points, bm_data_map):
+def transform_map2contour(trafo_grid_points, bm_template_grid_points, bm_data_map, extend=[30,30]):
     # Extend original grid of template contour to image boundaries
-    x_extend, y_extend = 30, 30
     max_distance = 40
-    extended_grid_points = extend_grid(bm_template_grid_points, x_extend, y_extend)
+    extended_grid_points = extend_grid(bm_template_grid_points, extend[0], extend[1])
 
     # Interpolate data maps from the regular grid to the transformed grid
     data_map_trafo = nearest_neighbor_interp(trafo_grid_points, bm_data_map.ravel(), extended_grid_points, max_distance)

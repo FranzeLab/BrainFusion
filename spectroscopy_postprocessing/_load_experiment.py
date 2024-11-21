@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 import re
 import pandas as pd
-from _utils import get_h5metadata, get_user_input, rotate3Dgrid
+from ._utils import get_h5metadata, get_user_input, rotate3Dgrid
 
 
 def choose_rep_number(rep_numbers):
@@ -42,7 +42,7 @@ def get_brillouin_data(bm_path):
 
             # Read the CSV file
             file_path = os.path.join(bm_path, filename)
-            data_slice = pd.read_csv(file_path, skiprows=2, header=None).to_numpy().T
+            data_slice = pd.read_csv(file_path, skiprows=2, header=None).to_numpy()
             data_slice = np.expand_dims(data_slice, axis=-1)  # Shape becomes (rows, cols, 1)
 
             # Initialize the variable dictionary if it doesn't exist
@@ -99,6 +99,57 @@ def get_mask(folder_path):
         return None
 
 
+def get_roi(folder_path, simple=False):
+    if os.path.exists(folder_path):
+        if simple:
+            path = os.path.join(folder_path, 'Plots', 'brain_outline.txt')
+
+            # Read the content of the .txt file
+            paths_contents = {}
+            with open(path, 'r') as f:
+                # Store the content in a list
+                content = f.readlines()
+                # Remove newline characters and split coordinates
+                coordinates = [tuple(line.strip().split('\t')) for line in content]
+
+                # Convert to Nx2 NumPy array
+                return np.array(coordinates, dtype=float)
+
+        # Iterate over all items in the directory
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+
+            # Check if the item is a directory
+            if os.path.isdir(item_path):
+                # Initialize a list to hold the contents of .txt files for this folder
+                paths_contents = {}
+
+                # Iterate over all files in the subdirectory
+                for file in os.listdir(item_path):
+                    if file.endswith('.txt'):
+                        # Construct the full file path
+                        file_path = os.path.join(item_path, file)
+
+                        # Read the content of the .txt file
+                        with open(file_path, 'r') as f:
+                            # Store the content in a list
+                            content = f.readlines()
+                            # Remove newline characters and split coordinates
+                            coordinates = [tuple(line.strip().split(', ')) for line in content]
+
+                            # Convert to Nx2 NumPy array
+                            paths_contents[file] = np.array(coordinates, dtype=float)
+
+                # Add the contents to the dictionary with the folder name as the key
+                folder_dict[item] = paths_contents
+
+        return folder_dict
+
+    else:
+        print(f'No .txt file was found for {folder_path}. Continuing without!')
+        return None
+
+
 def load_brillouin_experiment(folder_path):
     # Load Brillouin metadata file
     bm_h5_path = os.path.join(folder_path, 'RawData', 'Brillouin.h5')
@@ -126,21 +177,41 @@ def load_brillouin_experiment(folder_path):
     bf_data_rep = bf_data[bf_chosen_rep]
 
     # Load mask
-    mask = get_mask(folder_path)
+    contour = get_roi(folder_path, simple=True)
 
-    # Rotate brightfield image
-    bf_data_rep = np.rot90(bf_data_rep, 3)
+    # Rotate bright-field image and mask
+    bf_data_rep = np.fliplr(np.rot90(bf_data_rep, 1))
 
-    # Rotate the data grid and map
+    # Flip image up-down for imshow function with origin=lower
+    bf_data_rep = np.flipud(bf_data_rep)
+
+    # Rotate data grid
     grid = bm_metadata_rep['brillouin_grid']
-    grid_rav = np.column_stack([grid[:, :, :, 0].ravel(), grid[:, :, :, 1].ravel(), grid[:, :, :, 2].ravel()])
-    x_center, y_center = ((bf_data_rep.shape[0] - 1) / 2, (bf_data_rep.shape[1] - 1) / 2)
-    grid_rot = rotate3Dgrid(grid_rav, 90, x_center, y_center)
-    bm_metadata_rep['brillouin_grid'] = grid_rot.reshape(grid.shape[0], grid.shape[1], grid.shape[2], 3)
+    rot_grid = grid.copy()
+    rot_grid[:, :, :, 0], rot_grid[:, :, :, 1] = grid[:, :, :, 1], grid[:, :, :, 0]
+    bm_metadata_rep['brillouin_grid'] = rot_grid
 
-    mask = np.rot90(mask, 3)
+    # Check for correct positioning
+    """
+    import matplotlib.pyplot as plt
+    scale_x = bm_metadata_rep['pixPerMicrometerX'][0, 1]
+    scale_y = bm_metadata_rep['pixPerMicrometerY'][0, 0]
 
-    return bm_data_rep, bm_metadata_rep, bf_data_rep, mask
+    plt.imshow(bf_data_rep, cmap='gray', origin='lower')
+    plt.scatter(bm_metadata_rep['brillouin_grid'][:, :, 0, 0] * np.abs(scale_x),
+                bm_metadata_rep['brillouin_grid'][:, :, 0, 1] * np.abs(scale_y),
+                c=bm_data_rep['rayleigh_peak_intensity'][:, :, 0],
+                cmap='viridis', vmin=1000, vmax=8000, s=5)
+    plt.show()
+    """
+
+    # Brillouin scale to µm/pix
+    assert np.isclose(np.abs(bm_metadata_rep['pixPerMicrometerX'][0, 1]),
+                      np.abs(bm_metadata_rep['pixPerMicrometerY'][0, 0]),
+                      rtol=1.e-3)
+    scale = 1 / np.abs(bm_metadata_rep['pixPerMicrometerX'][0, 1])
+
+    return bm_data_rep, bm_metadata_rep, bf_data_rep, contour, scale
 
 
 def load_afm_experiment(folder_path):
@@ -151,6 +222,10 @@ def load_afm_experiment(folder_path):
                 'k0_pyforce': data['k0_pyforce'], 'k_pyforce': data['k_pyforce']}
     afm_data = {key: np.array(value) for key, value in afm_data.items()}
 
+    # Calculate scaling factor in micrometer/pix
+    scale = data['m_per_pix'][0] * 1e-6
+
+    # Load AFM grid and scale to µm
     afm_grid = np.stack((np.array(data['x_image']), np.array(data['y_image'])), axis=-1)
 
     # Load background image
@@ -183,4 +258,21 @@ def load_afm_experiment(folder_path):
         print(f'No matching mask was found for {folder_path}!')
         exit()
 
-    return afm_data, afm_grid, img, mask
+    # Scale AFM grid
+    afm_grid = afm_grid * scale
+
+    # Check for correct positioning
+    """
+    import matplotlib.pyplot as plt
+    
+    height_in_mu = img.shape[0] * scale
+    width_in_mu = img.shape[1] * scale
+
+    # Plot background image and heatmap
+    plt.imshow(img, cmap='gray', aspect='equal', origin='lower', extent=[0, width_in_mu, 0, height_in_mu])
+    plt.scatter(afm_grid[:, 0], afm_grid[:, 1], c=afm_data['modulus'],
+                cmap='viridis', vmin=1000, vmax=8000, s=5)
+    plt.show()
+    """
+
+    return afm_data, afm_grid, img, mask, scale

@@ -1,18 +1,18 @@
 import os
 import matplotlib.pyplot as plt
-from _load_experiment import load_brillouin_experiment, load_afm_experiment
-from _find_average_contour import find_average_contour
-from _transform_2Dmap import transform_map2contour, transform_grid2contour
-from _plot_maps import plot_contours, plot_experiments
-from _utils import project_brillouin_dataset, export_analysis, import_analysis, check_parameters
-from _br_afm_correlation import fit_coordinates_gmm, afm_brillouin_corr
+import numpy as np
+from ._find_average_contour import find_average_contour, extract_and_interpolate_contours, interpolate_contour
+from ._transform_2Dmap import transform_map2contour, transform_grid2contour
+from ._plot_maps import plot_contours
+from ._utils import project_brillouin_dataset
+from ._br_afm_correlation import fit_coordinates_gmm
 
 
 def process_experiment(experiment, base_folder, results_folder, load_experiment_func, **kwargs):
     os.makedirs(results_folder, exist_ok=True)
 
     folder_names, data_list, grid_list, grid_shape_list = [], [], [], []
-    bf_data_list, mask_list = [], []
+    bf_data_list, mask_list, scale_list = [], [], []
 
     for folder_name in os.listdir(base_folder):
         folder_path = os.path.join(base_folder, folder_name)
@@ -20,7 +20,7 @@ def process_experiment(experiment, base_folder, results_folder, load_experiment_
             folder_names.append(folder_name)
 
             # Load data from experiment folder
-            data, grid, bf_data, mask = load_experiment_func(folder_path)
+            data, grid, bf_data, mask, pix_per_um = load_experiment_func(folder_path)
 
             if experiment == 'brillouin':
                 # Create 2D Brillouin map from 3D dataset and ravel datasets
@@ -33,9 +33,22 @@ def process_experiment(experiment, base_folder, results_folder, load_experiment_
             grid_list.append(grid)
             bf_data_list.append(bf_data)
             mask_list.append(mask)
+            scale_list.append(pix_per_um)
+
+    # Transform mask to contour and scale
+    if isinstance(mask_list[0], np.ndarray) and mask_list[0].ndim == 2 and mask_list[0].shape[1] == 2:
+        contours = mask_list
+        contours_list = []
+        for contour in contours:
+            contour[:, 1] = 1023 - contour[:, 1]  # ToDo: FIX
+            contours_list.append(interpolate_contour(contour, num_points=1000))
+    else:
+        contours_list = extract_and_interpolate_contours(mask_list, num_points=1000)
+    contours_list = [contour * scale_list[index] for index, contour in enumerate(contours_list)]
 
     # Calculate average mask and plot result
-    med_contour, contours_list, template_contour, matched_contour_list = find_average_contour(mask_list)
+    med_contour, contours_list, template_contour, matched_contour_list, error_list = find_average_contour(contours_list)
+
     fig = plot_contours(med_contour, template_contour, matched_contour_list)
     output_path = os.path.join(results_folder, 'matched_mask_contours.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
@@ -71,7 +84,8 @@ def process_experiment(experiment, base_folder, results_folder, load_experiment_
             'trafo_grid': grid_trafo_list[i],
             'contour': contours_list[i],
             'trafo_contour': contour_trafo_list[i],
-            'brightfield_image': bf_data_list[i]
+            'brightfield_image': bf_data_list[i],
+            'pix_per_um': scale_list[i]
         }
 
     # Adding common data at folder level
@@ -82,69 +96,3 @@ def process_experiment(experiment, base_folder, results_folder, load_experiment_
     structured_data['extended_grid'] = extended_grid
 
     return structured_data
-
-
-# Parameters for Brillouin data
-brillouin_params = {
-    "experiment": 'brillouin',
-    "load_experiment_func": load_brillouin_experiment,
-    "base_folder": 'C:/Users/niklas/OneDrive/Daten Master-Projekt/Brillouin/Data',
-    "results_folder": 'C:/Users/niklas/OneDrive/Daten Master-Projekt/Brillouin/Analysis',
-    "raw_data_key": 'brillouin_shift_f_proj',
-    "label": 'Brillouin shift (GHz)',
-    "cmap": 'viridis',
-    "marker_size": 35
-}
-
-# Parameters for AFM data
-afm_params = {
-    "experiment": 'afm',
-    "load_experiment_func": load_afm_experiment,
-    "base_folder": 'C:/Users/niklas/OneDrive/Daten Master-Projekt/AFM/data/Xenopus_Brain/RawData',
-    "results_folder": 'C:/Users/niklas/OneDrive/Daten Master-Projekt/AFM/data/Xenopus_Brain/results',
-    "raw_data_key": 'modulus',
-    "label": 'Reduced elastic modulus (Pa)',
-    "cmap": 'hot',
-    "marker_size": 5
-}
-
-# Process Brillouin data
-brillouin_analysis_path = os.path.join(brillouin_params['results_folder'], 'BrillouinAnalysis.h5')
-if not os.path.exists(brillouin_analysis_path):
-    brillouin_analysis = process_experiment(**brillouin_params)
-    export_analysis(brillouin_analysis_path, brillouin_analysis, brillouin_params)
-else:
-    brillouin_analysis, brillouin_params_loaded = import_analysis(brillouin_analysis_path)
-    check_parameters(brillouin_params, brillouin_params_loaded)
-    brillouin_params = brillouin_params_loaded
-
-# Process AFM data
-afm_analysis_path = os.path.join(afm_params['results_folder'], 'AfmAnalysis.h5')
-if not os.path.exists(afm_analysis_path):
-    afm_analysis = process_experiment(**afm_params)
-    export_analysis(afm_analysis_path, afm_analysis, afm_params)
-else:
-    afm_analysis, afm_params_loaded = import_analysis(afm_analysis_path)
-    check_parameters(afm_params, afm_params_loaded)
-    afm_params = afm_params_loaded
-
-# ToDo: CHECK if loading the dataset versus direct calculation yields different results!
-
-# Plot results for AFM and Brillouin experiments
-plot_experiments(brillouin_analysis, **brillouin_params)
-plot_experiments(afm_analysis, **afm_params)
-
-# Extract relevant data for correlation map calculation
-# ToDo: AFM and Brillouin grids in pixels and not µm!
-afm_scale = 2
-afm_analysis['average_grid'] = afm_analysis['average_grid'] * afm_scale
-afm_analysis['median_contour'] = afm_analysis['median_contour'] * afm_scale
-
-# Calculate correlation between AFM and Brillouin datasets
-results_folder = './correlation'
-os.makedirs(results_folder, exist_ok=True)
-correlation, median_contour, afm_data_interp, br_data_interp, grid_average = afm_brillouin_corr(afm_analysis,
-                                                                                                afm_params,
-                                                                                                brillouin_analysis,
-                                                                                                brillouin_params,
-                                                                                                results_folder)

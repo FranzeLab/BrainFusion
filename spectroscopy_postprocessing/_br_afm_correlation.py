@@ -4,9 +4,9 @@ import numpy as np
 from sklearn.mixture import GaussianMixture
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
-from _find_average_contour import match_contours, calculate_median_contour
-from _transform_2Dmap import transform_grid2contour
-from _plot_maps import plot_contours, plot_corr_maps, plot_norm_corr
+from ._find_average_contour import match_contours, find_average_contour, orientate_shift_contours
+from ._transform_2Dmap import transform_grid2contour
+from ._plot_maps import plot_contours, plot_corr_maps, plot_norm_corr
 from scipy.stats import pearsonr
 from sklearn.preprocessing import MinMaxScaler
 
@@ -141,11 +141,8 @@ def afm_brillouin_corr(afm_analysis, afm_params, br_analysis, br_params, results
     # Create contours list
     contours_list = [afm_contour, br_contour]
 
-    # Circularly align and match contours using ellipse fitting
-    matched_contour_list, template_contour = match_contours(contours_list, template_index=0)
-
     # Calculate the median contour
-    median_contour = calculate_median_contour(matched_contour_list)
+    median_contour, contours_list, template_contour, matched_contour_list, errors = find_average_contour(contours_list=contours_list)
 
     fig = plot_contours(median_contour, template_contour, matched_contour_list)
     output_path = os.path.join(results_folder, 'matched_mask_contours.png')
@@ -195,7 +192,7 @@ def afm_brillouin_corr(afm_analysis, afm_params, br_analysis, br_params, results
 
     # Plot normalized correlation
     fig = plot_norm_corr(afm_norm, br_norm, correlation)
-    output_path = os.path.join(results_folder, f'BrillouinAFMCorrelationMap.png')
+    output_path = os.path.join(results_folder, f'CorrelationMap.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 

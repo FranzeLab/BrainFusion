@@ -68,11 +68,12 @@ def get_h5metadata(h5_path, data_var):
     metadata_dict = {}
     with h5py.File(h5_path, 'r') as h5_file:
         for rep in reps:
-            pixToMicrometerX = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/micrometerToPixX']
-            pixToMicrometerX_x, pixToMicrometerX_y = pixToMicrometerX.attrs['x'], pixToMicrometerX.attrs['y']
+            # Pixels per micrometer is correct!
+            pixPerMicrometerX = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/micrometerToPixX']
+            pixPerMicrometerX_x, pixPerMicrometerX_y = pixPerMicrometerX.attrs['x'], pixPerMicrometerX.attrs['y']
 
-            pixToMicrometerY = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/micrometerToPixY']
-            pixToMicrometerY_x, pixToMicrometerY_y = pixToMicrometerY.attrs['x'], pixToMicrometerY.attrs['y']
+            pixPerMicrometerY = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/micrometerToPixY']
+            pixPerMicrometerY_x, pixPerMicrometerY_y = pixPerMicrometerY.attrs['x'], pixPerMicrometerY.attrs['y']
 
             origin = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/origin']
             origin_x, origin_y = origin.attrs['x'], origin.attrs['y']
@@ -83,30 +84,27 @@ def get_h5metadata(h5_path, data_var):
             scanner = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/positionScanner']
             scanner_x, scanner_y = scanner.attrs['x'], scanner.attrs['y']
 
-            # Transform scanner position to coordinate system of image
-            scanner_x = scanner_x * pixToMicrometerX_y
-            scanner_y = scanner_y * pixToMicrometerY_x
-
             if data_var == 'Brillouin':
                 # Get grid coordinates from Brillouin measurement
                 brillouin_grid_x = h5_file[f'Brillouin/{rep}/payload/positions-x'][:]
                 brillouin_grid_y = h5_file[f'Brillouin/{rep}/payload/positions-y'][:]
                 brillouin_grid_z = h5_file[f'Brillouin/{rep}/payload/positions-z'][:]
 
-                # Transform Brillouin measurement grid to coordinate system of image
-                brillouin_grid_x = (brillouin_grid_x - stage_x) * pixToMicrometerX_y
-                brillouin_grid_y = (brillouin_grid_y - stage_y) * pixToMicrometerY_x
-                brillouin_grid_z = (brillouin_grid_z - np.min(brillouin_grid_z))  # Already in µm
+                # Shift Brillouin measurement grid to stage centre, bring coordinates in correct order and scale
+                # ToDo: Fix the y-translation error!
+                shift_y = 1023/2
+                brillouin_grid_x = np.transpose(brillouin_grid_x - stage_x, (1, 2, 0))
+                brillouin_grid_y = np.transpose(brillouin_grid_y - stage_y + shift_y, (1, 2, 0))
+                brillouin_grid_z = np.transpose(brillouin_grid_z - np.min(brillouin_grid_z), (1, 2, 0))  # in µm
 
                 brillouin_grid = np.stack((brillouin_grid_x, brillouin_grid_y, brillouin_grid_z), axis=-1)
-                brillouin_grid = np.transpose(brillouin_grid, (2, 1, 0, 3))
             else:
                 brillouin_grid = None
 
             # Create a dictionary for the current replicate
             replicate_metadata = {
-                'pixToMicrometerX': np.stack((pixToMicrometerX_x, pixToMicrometerX_y), axis=-1),
-                'pixToMicrometerY': np.stack((pixToMicrometerY_x, pixToMicrometerY_y), axis=-1),
+                'pixPerMicrometerX': np.stack((pixPerMicrometerX_x, pixPerMicrometerX_y), axis=-1),
+                'pixPerMicrometerY': np.stack((pixPerMicrometerY_x, pixPerMicrometerX_y), axis=-1),
                 'origin': np.stack((origin_x, origin_y), axis=-1),
                 'scanner': np.stack((scanner_x, scanner_y), axis=-1),
                 'stage': np.stack((stage_x, stage_y), axis=-1),
