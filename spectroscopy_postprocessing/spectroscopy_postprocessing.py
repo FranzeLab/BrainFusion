@@ -44,12 +44,12 @@ def process_experiment(experiment, base_folder, results_folder, load_experiment_
             contours_list.append(interpolate_contour(contour, num_points=1000))
     else:
         contours_list = extract_and_interpolate_contours(mask_list, num_points=1000)
-    contours_list = [contour * scale_list[index] for index, contour in enumerate(contours_list)]
+    contours_list = [contour / scale_list[index] for index, contour in enumerate(contours_list)]
 
     # Calculate average mask and plot result
-    med_contour, contours_list, template_contour, matched_contour_list, error_list = find_average_contour(contours_list)
+    avg_contour, contours_list, template_contour, matched_contour_list, error_list = find_average_contour(contours_list)
 
-    fig = plot_contours(med_contour, template_contour, matched_contour_list)
+    fig = plot_contours(avg_contour, template_contour, matched_contour_list)
     output_path = os.path.join(results_folder, 'matched_mask_contours.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -58,11 +58,13 @@ def process_experiment(experiment, base_folder, results_folder, load_experiment_
     data_trafo_list, grid_trafo_list, contour_trafo_list, extended_grid = [], [], [], []
     for index, contour in enumerate(contours_list):
         # Transform original grid to coordinate system of deformed contour
-        trafo_grid_points, trafo_contour = transform_grid2contour(contour, med_contour, grid_list[index])
+        trafo_grid_points, trafo_contour = transform_grid2contour(contour, avg_contour, grid_list[index])
 
         # Transform maps to deformed coordinate system and interpolate on rectangular grid
         data_trafo = {}
         for key, data_map in data_list[index].items():
+            if '_distribution' in key:
+                continue
             data_map_trafo, extended_grid = transform_map2contour(trafo_grid_points, grid_list[0], data_map)
             data_trafo[key + '_trafo'] = data_map_trafo
 
@@ -89,7 +91,7 @@ def process_experiment(experiment, base_folder, results_folder, load_experiment_
         }
 
     # Adding common data at folder level
-    structured_data['median_contour'] = med_contour
+    structured_data['average_contour'] = avg_contour
     structured_data['template_contour'] = template_contour
     structured_data['average_data'] = data_median_dict
     structured_data['average_grid'] = grid_avg

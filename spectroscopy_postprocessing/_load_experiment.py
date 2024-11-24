@@ -202,14 +202,15 @@ def load_brillouin_experiment(folder_path):
                 bm_metadata_rep['brillouin_grid'][:, :, 0, 1] * np.abs(scale_y),
                 c=bm_data_rep['rayleigh_peak_intensity'][:, :, 0],
                 cmap='viridis', vmin=1000, vmax=8000, s=5)
+    plt.plot(contour[:, 0], 1023 - contour[:, 1], 'b-')
     plt.show()
     """
 
-    # Brillouin scale to µm/pix
+    # Brillouin scale to pix/µm
     assert np.isclose(np.abs(bm_metadata_rep['pixPerMicrometerX'][0, 1]),
                       np.abs(bm_metadata_rep['pixPerMicrometerY'][0, 0]),
                       rtol=1.e-3)
-    scale = 1 / np.abs(bm_metadata_rep['pixPerMicrometerX'][0, 1])
+    scale = np.abs(bm_metadata_rep['pixPerMicrometerX'][0, 1])
 
     return bm_data_rep, bm_metadata_rep, bf_data_rep, contour, scale
 
@@ -222,10 +223,10 @@ def load_afm_experiment(folder_path):
                 'k0_pyforce': data['k0_pyforce'], 'k_pyforce': data['k_pyforce']}
     afm_data = {key: np.array(value) for key, value in afm_data.items()}
 
-    # Calculate scaling factor in micrometer/pix
-    scale = data['m_per_pix'][0] * 1e-6
+    # Calculate scaling factor in pix/µm
+    scale = data['pix_per_m'][0] * 1e-6
 
-    # Load AFM grid and scale to µm
+    # Load AFM grid
     afm_grid = np.stack((np.array(data['x_image']), np.array(data['y_image'])), axis=-1)
 
     # Load background image
@@ -258,15 +259,15 @@ def load_afm_experiment(folder_path):
         print(f'No matching mask was found for {folder_path}!')
         exit()
 
-    # Scale AFM grid
-    afm_grid = afm_grid * scale
+    # Scale AFM grid to µm
+    afm_grid = afm_grid / scale
 
     # Check for correct positioning
     """
     import matplotlib.pyplot as plt
     
-    height_in_mu = img.shape[0] * scale
-    width_in_mu = img.shape[1] * scale
+    height_in_mu = img.shape[0] / scale
+    width_in_mu = img.shape[1] / scale
 
     # Plot background image and heatmap
     plt.imshow(img, cmap='gray', aspect='equal', origin='lower', extent=[0, width_in_mu, 0, height_in_mu])

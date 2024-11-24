@@ -138,7 +138,7 @@ def check_parameters(params_defined, params_loaded):
     if differences:
         print("Differences found between loaded parameters and defined parameters:")
         for key, diff in differences.items():
-            print(f"{key}: Defined = {diff['defined']}, Loaded = {diff['loaded']}")
+            print(f"{key}: Old = {diff['loaded']}, Loaded = {diff['defined']}")
 
 
 def project_brillouin_dataset(bm_data, bm_metadata, br_intensity_threshold=15):
@@ -147,15 +147,33 @@ def project_brillouin_dataset(bm_data, bm_metadata, br_intensity_threshold=15):
         # Filter out invalid peaks
         mask_peak = bm_data['brillouin_peak_intensity'] > br_intensity_threshold
         # Filter out water shifts
-        mask_shift = (4.4 < bm_data['brillouin_shift_f']) & (bm_data['brillouin_shift_f'] < 9.0)
+        mask_shift = (4.4 < bm_data['brillouin_shift_f']) & (bm_data['brillouin_shift_f'] < 10.0)
+
+        # Check data distribution visually
+        """
+        import matplotlib.pyplot as plt
+        cumulative_percentage = np.linspace(0, 100, len(sorted_data))
+        plt.plot(sorted_data, cumulative_percentage, color='blue', linewidth=2)
+        plt.title("Cumulative distribution")
+        plt.xlabel("Brillouin shift (GHz)")
+        plt.ylabel("Cumulative Percentage (%)")
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+        plt.show()
+        """
 
         mask = mask_peak & mask_shift
     else:
         mask = True
     for key, value in bm_data.items():
+        new_value = value.copy()  # Copy the original data to avoid modifying it
+
+        # For distribution analysis
+        sorted_data = np.sort(new_value.flatten())
+        bm_data_proj[key + '_distribution'] = sorted_data  # Store the sorted distribution
+
         if key == 'brillouin_peak_intensity':
             continue
-        new_value = value.copy()  # Copy the original data to avoid modifying it
+
         new_value = np.where(mask, new_value, np.nan)
 
         proj_value = np.nanmedian(new_value, axis=-1).ravel()

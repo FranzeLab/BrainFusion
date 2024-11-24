@@ -198,7 +198,7 @@ def calculate_distances(contours, master_contour, metric='jaccard'):
     return results
 
 
-def find_average_contour(contours_list, template_index=0, fit_routine='ellipse', average='median',
+def find_average_contour(contours_list, template_index=0, fit_routine='ellipse', average='mean',
                          metric='jaccard'):
     for element in contours_list:
         assert isinstance(element, np.ndarray), "Each contour must be a numpy array!"
@@ -211,9 +211,9 @@ def find_average_contour(contours_list, template_index=0, fit_routine='ellipse',
     matched_contour_list = match_contours(contours_list, template_contour, fit_routine)
 
     # Calculate the median contour
-    median_contour = calculate_average_contour(matched_contour_list, average=average)
+    avg_contour = calculate_average_contour(matched_contour_list, average=average)
 
     # Calculate error
-    errors = calculate_distances(matched_contour_list, median_contour, metric=metric)
+    errors = calculate_distances(matched_contour_list, avg_contour, metric=metric)
 
-    return median_contour, contours_list, template_contour, matched_contour_list, errors
+    return avg_contour, contours_list, template_contour, matched_contour_list, errors
