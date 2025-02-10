@@ -161,7 +161,7 @@ def project_brillouin_dataset(bm_data, bm_metadata, br_intensity_threshold=15):
         plt.show()
         """
 
-        mask = mask_peak & mask_shift
+        mask = mask_peak & mask_shift & (0 < bm_data['brillouin_peak_fwhm_f']) & (bm_data['brillouin_peak_fwhm_f'] < 5)
     else:
         mask = True
     for key, value in bm_data.items():

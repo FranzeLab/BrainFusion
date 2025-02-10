@@ -55,7 +55,7 @@ def fit_coordinates_gmm(grid_list, data_list, same_maps=True, num_components='me
     return representative_coords, avg_dict
 
 
-def bin_and_correlate(data_map1, data_map2, grid_points, bin_size=4):
+def bin_and_correlate(data_map1, data_map2, grid_points, bin_size=4, map1_fit_limits=None, map2_fit_limits=None):
     # Ensure both data maps are the same shape
     assert data_map1.shape == data_map2.shape, "Data maps must have the same shape."
 
@@ -97,17 +97,29 @@ def bin_and_correlate(data_map1, data_map2, grid_points, bin_size=4):
     median_map1 = median_map1[mask]
     median_map2 = median_map2[mask]
 
+    # Normalize both heatmaps
+    heatmap1_norm = normalize_heatmap(median_map1)
+    heatmap2_norm = normalize_heatmap(median_map2)
+
+    # Filter boundaries
+    mask1 = mask2 = np.full(heatmap1_norm.shape, True, dtype=bool)
+    if map1_fit_limits:
+        mask1 = (heatmap1_norm > map1_fit_limits[0]) & (heatmap1_norm < map1_fit_limits[1])
+
+    if map2_fit_limits:
+        mask2 = (heatmap2_norm > map2_fit_limits[0]) & (heatmap2_norm < map2_fit_limits[1])
+
+    # Apply the combined mask
+    combined_mask = mask1 & mask2
+    heatmap1_norm_f, heatmap2_norm_f = heatmap1_norm[combined_mask], heatmap2_norm[combined_mask]
+
     # Calculate the Pearson correlation coefficient
-    if len(median_map1) > 1 and len(median_map1) > 1:
-        correlation, p_value = pearsonr(median_map1, median_map2)
+    if len(heatmap1_norm_f) > 1 and len(heatmap2_norm_f) > 1:
+        correlation, p_value = pearsonr(heatmap1_norm_f, heatmap2_norm_f)
         print("Correlation after binning and taking medians:", correlation)
     else:
         print("Not enough valid data points for correlation.")
         correlation = None
-
-    # Normalize both heatmaps
-    heatmap1_norm = normalize_heatmap(median_map1)
-    heatmap2_norm = normalize_heatmap(median_map2)
 
     return {'map1': heatmap1_norm, 'map2': heatmap2_norm, 'pearson': correlation, 'p_value': p_value}
 

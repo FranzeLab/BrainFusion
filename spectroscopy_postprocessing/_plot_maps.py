@@ -6,7 +6,10 @@ from ._utils import mask_contour
 from shapely.geometry import Polygon, Point
 from matplotlib.ticker import LogLocator
 from scipy.optimize import curve_fit
+from scipy.interpolate import griddata
 from scipy.stats import f
+plt.rcParams['font.family'] = 'Helvetica'
+plt.rcParams['svg.fonttype'] = 'none'
 
 
 def format_p_value(p):
@@ -24,20 +27,22 @@ def plot_contours(average_contour, template_contour, matched_contours):
     fig = plt.figure(figsize=(8, 8))
 
     # Plot the template contour
-    plt.plot(template_contour[:, 0], template_contour[:, 1], 'g-', linewidth=2, label='Mask (Template)')
-    plt.scatter(template_contour[0, 0], template_contour[0, 1], color='orange', s=12, label='First contour coordinate')
+    plt.plot(template_contour[:, 0], template_contour[:, 1], color='grey', linestyle='-', linewidth=1.5, alpha=0.5,
+             label='Mask (Template)')
+    #plt.scatter(template_contour[0, 0], template_contour[0, 1], color='orange', s=12, label='First contour coordinate')
 
     # Plot the matched contours (only label the first one)
     for i, contour in enumerate(matched_contours[1:]):
         if i == 0:
-            plt.plot(contour[:, 0], contour[:, 1], 'b-', label='Masks (Matched)')
-            plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
+            plt.plot(contour[:, 0], contour[:, 1], color='grey', linestyle='-', linewidth=1.5, alpha=0.5,
+                     label='Masks (Matched)')
+            #plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
         else:
-            plt.plot(contour[:, 0], contour[:, 1], 'b-')  # No label for subsequent contours
-            plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
+            plt.plot(contour[:, 0], contour[:, 1], color='grey', linestyle='-', linewidth=1.5, alpha=0.5)  # No label for subsequent contours
+            #plt.scatter(contour[0, 0], contour[0, 1], color='orange', s=12)
 
     # Plot the median contour
-    plt.plot(average_contour[:, 0], average_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
+    plt.plot(average_contour[:, 0], average_contour[:, 1], color='blue', linestyle='--', linewidth=4, label='Median Contour')
 
     plt.legend()
     plt.axis('equal')
@@ -108,9 +113,11 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
 
     # Plot the deformed grid using transformed grid values
     # Contours
-    axes[0].plot(original_contour[:, 0], original_contour[:, 1], 'b-', label='Original Contour')
-    axes[0].plot(deformed_contour[:, 0], deformed_contour[:, 1], 'r-', label='Deformed Contour')
-    axes[0].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
+    axes[0].plot(original_contour[:, 0], original_contour[:, 1], color='grey', linestyle='-', linewidth=3,
+                 label='Original Contour')
+    axes[0].plot(deformed_contour[:, 0], deformed_contour[:, 1], color='blue', linestyle='--', linewidth=4,
+                 label='Deformed Contour')
+    #axes[0].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
 
     # Original grid
     if mask:
@@ -136,16 +143,18 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
                     vmin=vmin,
                     vmax=vmax)
 
-    axes[0].legend()
-    axes[0].set_title('Original data map')
-    axes[0].grid()
+    #axes[0].legend()
+    #axes[0].set_title('Original data map')
+    #axes[0].grid()
     axes[0].axis('equal')
 
     # Plot the deformed grid using new coordinates and transformed data values (griddata)
     # Contours
-    axes[1].plot(original_contour[:, 0], original_contour[:, 1], 'b-', label='Original Contour')
-    axes[1].plot(deformed_contour[:, 0], deformed_contour[:, 1], 'r-', label='Deformed Contour')
-    axes[1].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
+    axes[1].plot(original_contour[:, 0], original_contour[:, 1], 'grey', linestyle='-', linewidth=3,
+                 label='Original Contour')
+    axes[1].plot(deformed_contour[:, 0], deformed_contour[:, 1], 'blue', linestyle='--', linewidth=4,
+                 label='Deformed Contour')
+    #axes[1].plot(trafo_contour[:, 0], trafo_contour[:, 1], 'g--', label='Transformed Original Contour')
 
     # Original and deformed data
     if mask:
@@ -183,9 +192,10 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
                                        vmin=vmin,
                                        vmax=vmax)
 
-    axes[1].legend()
-    axes[1].set_title('Transformed data map')
-    axes[1].grid()
+    #axes[1].legend()
+    #axes[1].set_title('Transformed data map')
+    #axes[1].grid()
+    axes[1].axis('equal')
 
     # Set axis limits to be the same for both plots
     axes[1].set_xlim(axes[0].get_xlim())
@@ -203,19 +213,25 @@ def plot_cont_func(original_contour, deformed_contour, trafo_contour, bm_data, b
 
 def plot_average_heatmap(data_maps, grid_trafos, data_avg, grid_avg, average_contour, data_variable,
                          label='Brillouin shift (GHz)', cmap='viridis', marker_size=15, vmin=None, vmax=None,
-                         mask=True):
+                         mask=True, interpolate=True):
     # Create subplots with two side-by-side plots
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
     # Overlay all heatmaps on top of each other
     # Median contour
-    axes[0].plot(average_contour[:, 0], average_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
+    axes[0].plot(average_contour[:, 0], average_contour[:, 1], 'b--', linewidth=5, label='Median Contour')
 
     # Heatmaps
     for i, _ in enumerate(data_maps[1:]):
+        assert type(mask) is bool, print('The provided mask argument is not boolean!')
+        if mask is True:
+            mask_1 = mask_contour(average_contour, grid_trafos[i])
+        else:
+            mask_1 = np.full(grid_trafos[i].shape[0], True)
+
         if i == 0:
-            axes[0].scatter(grid_trafos[i][:, 0],
-                            grid_trafos[i][:, 1],
+            axes[0].scatter(np.ma.masked_where(~mask_1, grid_trafos[i][:, 0]),
+                            np.ma.masked_where(~mask_1, grid_trafos[i][:, 1]),
                             c=data_maps[i][data_variable],
                             cmap=cmap,
                             s=marker_size,
@@ -224,8 +240,8 @@ def plot_average_heatmap(data_maps, grid_trafos, data_avg, grid_avg, average_con
                             vmin=vmin,
                             vmax=vmax)
         else:
-            axes[0].scatter(grid_trafos[i][:, 0],
-                            grid_trafos[i][:, 1],
+            axes[0].scatter(np.ma.masked_where(~mask_1, grid_trafos[i][:, 0]),
+                            np.ma.masked_where(~mask_1, grid_trafos[i][:, 1]),
                             c=data_maps[i][data_variable],
                             cmap=cmap,
                             s=marker_size,
@@ -233,45 +249,95 @@ def plot_average_heatmap(data_maps, grid_trafos, data_avg, grid_avg, average_con
                             vmin=vmin,
                             vmax=vmax)
 
-    axes[0].legend()
-    axes[0].set_title('Layered data maps of transformed spatial maps')
-    axes[0].grid()
+    #axes[0].legend()
+    #axes[0].set_title('Layered data maps of transformed spatial maps')
+    #axes[0].grid()
     axes[0].axis('equal')
 
     # Average heatmap
     # Median contour
-    axes[1].plot(average_contour[:, 0], average_contour[:, 1], 'r--', linewidth=2, label='Median Contour')
+    axes[1].plot(average_contour[:, 0], average_contour[:, 1], 'b--', linewidth=5, label='Median Contour')
 
-    # Mask average data
-    assert type(mask) is bool, print('The provided mask argument is not boolean!')
-    if mask is True:
-        mask = mask_contour(average_contour, grid_avg)
+    if interpolate is True:
+        # Create grid
+        x_min, x_max = min(g[:, 0].min() for g in grid_trafos), max(g[:, 0].max() for g in grid_trafos)
+        y_min, y_max = min(g[:, 1].min() for g in grid_trafos), max(g[:, 1].max() for g in grid_trafos)
+        grid_x, grid_y = np.mgrid[x_min:x_max:25j, y_min:y_max:40j]  # 20x40 grid for AFM
+        grid_points = np.column_stack([grid_x.ravel(), grid_y.ravel()])
+
+        interp_list = []
+        for i, _ in enumerate(data_maps[1:]):
+            grid = grid_trafos[i][:, :],
+            values = data_maps[i][data_variable]
+            val_interp = griddata(grid, values, grid_points, method='nearest')
+            interp_list.append(val_interp)
+
+        # Convert to NumPy array and compute the mean
+        interp_lists = np.array(interp_list)
+        mean_data = np.nanmean(interp_list, axis=0)  # Average across all interpolated grids
+
+        # Mask average data
+        assert type(mask) is bool, print('The provided mask argument is not boolean!')
+        if mask is True:
+            mask_2 = mask_contour(average_contour, grid_points)
+        else:
+            mask_2 = np.full(grid_points.shape[0], True)
+
+        # Average data
+        heatmap = axes[1].scatter(np.ma.masked_where(~mask_2, grid_points[:, 0]),
+                                  np.ma.masked_where(~mask_2, grid_points[:, 1]),
+                                  c=mean_data,
+                                  cmap=cmap,
+                                  s=marker_size,
+                                  marker='s',
+                                  label='Transformed Grid',
+                                  alpha=1,
+                                  vmin=vmin,
+                                  vmax=vmax)
+
+        # axes[1].legend()
+        # axes[1].set_title('Average data map of transformed spatial maps')
+        # axes[1].grid()
+        axes[1].axis('equal')
+
+        # Add colorbar
+        cbar = fig.colorbar(heatmap, ax=axes[1])
+        cbar.set_label(label)
+
+        # Adjust layout to avoid overlap
+        plt.tight_layout()
     else:
-        mask = np.full(grid_avg.shape[0], True)
+        # Mask average data
+        assert type(mask) is bool, print('The provided mask argument is not boolean!')
+        if mask is True:
+            for i, _ in enumerate(data_maps[1:]):
+                mask_3 = mask_contour(average_contour, grid_avg)
+        else:
+            mask_3 = np.full(grid_avg.shape[0], True)
 
-    # Average data
-    heatmap = axes[1].scatter(np.ma.masked_where(~mask, grid_avg[:, 0]),
-                              np.ma.masked_where(~mask, grid_avg[:, 1]),
-                              c=data_avg[f'{data_variable}_median'],
-                              cmap=cmap,
-                              s=marker_size,
-                              marker='s',
-                              label='Transformed Grid',
-                              alpha=1,
-                              vmin=vmin,
-                              vmax=vmax)
+        # Average data
+        heatmap = axes[1].scatter(np.ma.masked_where(~mask_3, grid_avg[:, 0]),
+                                  np.ma.masked_where(~mask_3, grid_avg[:, 1]),
+                                  c=data_avg[f'{data_variable}_median'],
+                                  cmap=cmap,
+                                  s=marker_size,
+                                  marker='s',
+                                  label='Transformed Grid',
+                                  alpha=1,
+                                  vmin=vmin,
+                                  vmax=vmax)
 
-    axes[1].legend()
-    axes[1].set_title('Average data map of transformed spatial maps')
-    axes[1].grid()
-    axes[1].axis('equal')
+        #axes[1].legend()
+        #axes[1].set_title('Average data map of transformed spatial maps')
+        #axes[1].grid()
+        axes[1].axis('equal')
 
-    # Add colorbar
-    cbar = fig.colorbar(heatmap, ax=axes[1])
-    cbar.set_label(label)
+        # Add colorbar
+        cbar = fig.colorbar(heatmap, ax=axes[1])
+        cbar.set_label(label)
 
-    # Adjust layout to avoid overlap
-    plt.tight_layout()
+        # Adjust layout to avoid overlap
+        plt.tight_layout()
 
     return fig
 
@@ -418,7 +484,7 @@ def plot_norm_corr(map1, map2, pearson=None, p_value=None, label1="X-axis", labe
     return fig
 
 
-def plot_cumulative(analysis_file, raw_key, projected=True, results_folder='./results', bin=0.01, label='', log=False,
+def plot_cumulative(analysis_file, raw_key, projected=True, results_folder=None, bin=0.01, label='', log=False,
                     loc='upper left', x_ticks=6, round=1):
     results_folder = results_folder or './figures_for_thesis'
 
@@ -468,32 +534,32 @@ def plot_cumulative(analysis_file, raw_key, projected=True, results_folder='./re
     # Plot cumulative distribution
     plt.figure(figsize=(4, 6))
     # Raw data plot
-    plt.plot(bins[:-1], raw_cdist_aver, color='black', linewidth=2, label='3D dataset', linestyle='-')
+    plt.plot(bins[:-1], raw_cdist_aver, color='black', linewidth=3, label='3D dataset', linestyle='-')
     plt.fill_between(bins[:-1], raw_lower_bound, raw_upper_bound, color='#A9A9A9', alpha=0.4, edgecolor='none')
 
     # Projected data plot
     if projected:
-        plt.plot(bins[:-1], proj_cdist_aver, color='blue', linewidth=2, label='Median z-axis projection',
+        plt.plot(bins[:-1], proj_cdist_aver, color='blue', linewidth=3, label='Median z-axis projection',
                  linestyle='-')
         plt.fill_between(bins[:-1], proj_lower_bound, proj_upper_bound, color='#1E90FF', alpha=0.4, edgecolor='none')
 
     # Customize plot labels and title
-    plt.xlabel(label, fontsize=15)
-    plt.ylabel('Cumulative percentage [%]', fontsize=15)
-    plt.yticks(fontsize=13)
+    plt.xlabel(label, fontsize=21)
+    plt.ylabel('Cumulative Percentage (%)', fontsize=21)
+    plt.yticks(fontsize=14)
     plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
 
     plt.tick_params(axis='both', which='major', length=4, width=1.5)
     plt.ylim([0, 100])
 
     plt.xlim([lower, upper])
-    plt.xticks(np.round(np.linspace(lower, upper, x_ticks), round), fontsize=13)
+    plt.xticks(np.round(np.linspace(lower, upper, x_ticks), round), fontsize=14)
 
     if log:
         plt.xscale('log')
 
     if loc is not None:
-        plt.legend(loc=loc)
+        plt.legend(loc=loc, fontsize=12)
 
     # Save and show the plot
     save_path = os.path.join(results_folder, f'CumulativePercentage_{raw_key}.svg')
@@ -509,6 +575,8 @@ def plot_experiments(analysis_file, results_folder, raw_data_key, label='', cmap
     avg_data = analysis_file['average_data']
     avg_grid = analysis_file['average_grid']
     extended_grid = analysis_file['extended_grid']
+
+    """
     for exp_key, exp_value in analysis_file.items():
         if '#' in exp_key:
             fig = plot_maps_on_image(exp_value['brightfield_image'],
@@ -522,7 +590,7 @@ def plot_experiments(analysis_file, results_folder, raw_data_key, label='', cmap
                                      marker_size=marker_size,
                                      vmin=vmin,
                                      vmax=vmax,
-                                     log=True,
+                                     log=False,
                                      mask=True)
             output_path = os.path.join(results_folder, f'{exp_key}.png')
             fig.savefig(output_path, dpi=300, bbox_inches='tight')
@@ -541,10 +609,12 @@ def plot_experiments(analysis_file, results_folder, raw_data_key, label='', cmap
                                  cmap=cmap,
                                  marker_size=120,
                                  vmin=vmin,
-                                 vmax=vmax)
-            output_path = os.path.join(results_folder, f'MeanContourTransformed_{exp_key}.png')
+                                 vmax=vmax,
+                                 mask=True)
+            output_path = os.path.join(results_folder, f'MeanContourTransformed_{exp_key}.svg')
             fig.savefig(output_path, dpi=300, bbox_inches='tight')
             plt.close()
+    """
 
     # Plot all transformed heatmaps and the averaged heatmap
     data_list = [value['raw_data'] for key, value in analysis_file.items() if '#' in key]
