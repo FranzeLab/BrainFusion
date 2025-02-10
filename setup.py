@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='spectroscopy_postprocessing',
+    name='BrainFusion',
     version='0.1',
     packages=find_packages(),
     install_requires=[
@@ -16,11 +16,11 @@ setup(
         'scikit-image>=0.23'
     ],
     author='Niklas Gampl',
-    author_email='niklas.gampl@fau.de',
-    description='A package for postprocessing Brillouin and AFM spectroscopy data',
+    author_email='niklas.gampl@mpzpm.mpg.de',
+    description='A package for spatially correlating Brillouin and AFM spectroscopy data',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/nik-liegroup/spectroscopy_postprocessing',  # URL to your repository
+    url='https://github.com/nik-liegroup/BrainFusion',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
