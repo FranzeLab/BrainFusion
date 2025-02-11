@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="820121ef-d84e-4cb5-9d5e-ff556abbb7f2" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/_br_afm_correlation.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_gmm_correlation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/_find_average_contour.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_find_average_contour.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/_load_experiment.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/_plot_maps.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_plot_maps.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/_transform_2Dmap.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_transform_2Dmap.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BrainFusion/spectroscopy_postprocessing.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/brainfusion.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="2ltXqIvgXpZB9TFK3NZjQGILSLM" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/niklas/Documents/GitHub/spectroscopy_postprocessing&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager" selected="Python.example_script (2)">
+    <configuration name="correlation_analysis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Analysis" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/OneDrive/Daten Master-Projekt/Spectroscopy_Analysis" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\niklas\OneDrive\Daten Master-Projekt\Spectroscopy_Analysis\correlation_analysis.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="example_script (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Analysis" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/example_script.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="example_script (2)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Analysis" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/BrainFusion/examples/Example_2_Julia_SpinalCord" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/BrainFusion/examples/Example_2_Julia_SpinalCord/example_script.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="example_script" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Analysis" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/BrainFusion/examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/BrainFusion/examples/example_script.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="spectroscopy_postprocessing" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Analysis" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\niklas\Documents\GitHub\spectroscopy_postprocessing" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/spectroscopy_postprocessing/spectroscopy_postprocessing.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.example_script (2)" />
+      <item itemvalue="Python.example_script" />
+      <item itemvalue="Python.example_script (1)" />
+      <item itemvalue="Python.correlation_analysis" />
+      <item itemvalue="Python.spectroscopy_postprocessing" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.example_script (2)" />
+        <item itemvalue="Python.example_script (1)" />
+        <item itemvalue="Python.example_script" />
+        <item itemvalue="Python.correlation_analysis" />
+        <item itemvalue="Python.spectroscopy_postprocessing" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="820121ef-d84e-4cb5-9d5e-ff556abbb7f2" name="Changes" comment="" />
+      <created>1726000537272</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1726000537272</updated>
+      <workItem from="1726000539941" duration="874000" />
+      <workItem from="1726007110102" duration="597000" />
+      <workItem from="1726048189381" duration="31611000" />
+      <workItem from="1726097296171" duration="305000" />
+      <workItem from="1726097652278" duration="33000" />
+      <workItem from="1726131041802" duration="20121000" />
+      <workItem from="1726167637862" duration="14703000" />
+      <workItem from="1726182596007" duration="459000" />
+      <workItem from="1726242389991" duration="6839000" />
+      <workItem from="1726250525689" duration="3392000" />
+      <workItem from="1726307637943" duration="5820000" />
+      <workItem from="1726313550237" duration="2700000" />
+      <workItem from="1726316301292" duration="8692000" />
+      <workItem from="1726392334420" duration="79000" />
+      <workItem from="1726392422386" duration="14108000" />
+      <workItem from="1726406678943" duration="1459000" />
+      <workItem from="1726416431060" duration="15919000" />
+      <workItem from="1726434318262" duration="68000" />
+      <workItem from="1726434394172" duration="2000" />
+      <workItem from="1726434405687" duration="115000" />
+      <workItem from="1726434535297" duration="185000" />
+      <workItem from="1726502676891" duration="367000" />
+      <workItem from="1726503061325" duration="6168000" />
+      <workItem from="1726564088229" duration="16824000" />
+      <workItem from="1726617731314" duration="9068000" />
+      <workItem from="1726677383964" duration="25254000" />
+      <workItem from="1726742439838" duration="1492000" />
+      <workItem from="1726760312696" duration="3620000" />
+      <workItem from="1726829212469" duration="967000" />
+      <workItem from="1726833783788" duration="4916000" />
+      <workItem from="1726840668621" duration="16030000" />
+      <workItem from="1726857560845" duration="2076000" />
+      <workItem from="1726900395960" duration="2069000" />
+      <workItem from="1727002169381" duration="8908000" />
+      <workItem from="1727088882000" duration="5806000" />
+      <workItem from="1727095084708" duration="13838000" />
+      <workItem from="1727178175410" duration="2706000" />
+      <workItem from="1727180917685" duration="857000" />
+      <workItem from="1727275030049" duration="14224000" />
+      <workItem from="1727299427379" duration="1523000" />
+      <workItem from="1727345332989" duration="21527000" />
+      <workItem from="1727371980421" duration="10813000" />
+      <workItem from="1727428165704" duration="2790000" />
+      <workItem from="1727444071249" duration="17581000" />
+      <workItem from="1728058807429" duration="15078000" />
+      <workItem from="1728077086220" duration="8137000" />
+      <workItem from="1728124210205" duration="5673000" />
+      <workItem from="1728129965839" duration="8002000" />
+      <workItem from="1728138062739" duration="1193000" />
+      <workItem from="1728139347316" duration="821000" />
+      <workItem from="1728140268105" duration="1524000" />
+      <workItem from="1728979916659" duration="2616000" />
+      <workItem from="1729056075180" duration="2121000" />
+      <workItem from="1729533166951" duration="2000" />
+      <workItem from="1730406778222" duration="187000" />
+      <workItem from="1731933681784" duration="13000" />
+      <workItem from="1731933704281" duration="76000" />
+      <workItem from="1731945369017" duration="676000" />
+      <workItem from="1732095006146" duration="793000" />
+      <workItem from="1732121895207" duration="945000" />
+      <workItem from="1732123629768" duration="24337000" />
+      <workItem from="1732293604596" duration="49000" />
+      <workItem from="1739189282616" duration="1467000" />
+      <workItem from="1739190783948" duration="146000" />
+      <workItem from="1739190943177" duration="31256000" />
+      <workItem from="1739229343360" duration="12503000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Code_Examples/median_contour.py</url>
+          <line>103</line>
+          <option name="timeStamp" value="48" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/spectroscopy_postprocessing/afm/afm_analysis.py</url>
+          <line>14</line>
+          <option name="timeStamp" value="49" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/spectroscopy_postprocessing/tst.py</url>
+          <line>67</line>
+          <option name="timeStamp" value="68" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/spectroscopy_postprocessing/prelim_code/average_grid.py</url>
+          <line>164</line>
+          <option name="timeStamp" value="87" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/BrainFusion/_plot_maps.py</url>
+          <line>75</line>
+          <option name="timeStamp" value="202" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="E" />
+        <watch expression="E" />
+        <watch expression="label" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/transform_2Dmap_py$tsts.coverage" NAME="tsts Coverage Results" MODIFIED="1726252835740" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$afm_spectroscopy_postprocessing.coverage" NAME="afm_spectroscopy_postprocessing Coverage Results" MODIFIED="1727113456665" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/afm_spectroscopy_postprocessing_py$afm_spectroscopy_postprocessing.coverage" NAME="afm_spectroscopy_postprocessing Coverage Results" MODIFIED="1727279891907" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/brillouin_spectroscopy_postprocessing_py$brillouin_spectroscopy_postprocessing.coverage" NAME="brillouin_spectroscopy_postprocessing Coverage Results" MODIFIED="1727345807158" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/afm_spectroscopy_postprocessing_py$brillouin_spectroscopy_postprocessing.coverage" NAME="brillouin_spectroscopy_postprocessing Coverage Results" MODIFIED="1727299158883" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/preCode_ReadH5File_py$spectroscopy_postprocessing.coverage" NAME="spectroscopy_postprocessing Coverage Results" MODIFIED="1726626735520" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/avg_tst_py$_load_brillouin_experiment.coverage" NAME="_load_brillouin_experiment Coverage Results" MODIFIED="1726901910643" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$_calculate_average_heatmap.coverage" NAME="_calculate_average_heatmap Coverage Results" MODIFIED="1726762229398" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$exposed_brain_brillouin_analysis.coverage" NAME="exposed_brain_brillouin_analysis Coverage Results" MODIFIED="1726433988873" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/afm_analysis_py$afm_analysis__1_.coverage" NAME="afm_analysis (1) Coverage Results" MODIFIED="1726504673202" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$preCode_ReadH5File.coverage" NAME="preCode_ReadH5File Coverage Results" MODIFIED="1726688518915" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing/prelim_code" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$a.coverage" NAME="a Coverage Results" MODIFIED="1728068705025" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing/prelim_code" />
+    <SUITE FILE_PATH="coverage/tst_B_py$tsts.coverage" NAME="tsts Coverage Results" MODIFIED="1726313829639" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/__init___py$example_script.coverage" NAME="example_script Coverage Results" MODIFIED="1739205026591" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples" />
+    <SUITE FILE_PATH="coverage/tst_C_py$tst_D.coverage" NAME="tst_D Coverage Results" MODIFIED="1726404858944" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/afm_analysis_py$afm_spectroscopy_postprocessing.coverage" NAME="afm_spectroscopy_postprocessing Coverage Results" MODIFIED="1726515422528" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../afm_spectroscopy_postprocessing/afm_spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$_find_average_contour.coverage" NAME="_find_average_contour Coverage Results" MODIFIED="1726694068970" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/afm_analysis_py$spectroscopy_postprocessing.coverage" NAME="spectroscopy_postprocessing Coverage Results" MODIFIED="1726502915050" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/avg_tst_py$_transform_2Dmap.coverage" NAME="_transform_2Dmap Coverage Results" MODIFIED="1726902332845" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$_br_afm_correlation.coverage" NAME="_br_afm_correlation Coverage Results" MODIFIED="1728066029294" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$exposed_brain_brillouin_analysis.coverage" NAME="exposed_brain_brillouin_analysis Coverage Results" MODIFIED="1726434500854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$tsts.coverage" NAME="tsts Coverage Results" MODIFIED="1727113646460" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$tsts.coverage" NAME="tsts Coverage Results" MODIFIED="1726248954343" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/tsts_py$exposed_brain_brillouin_analysis.coverage" NAME="exposed_brain_brillouin_analysis Coverage Results" MODIFIED="1726311164689" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/avg_tst_py$avg_tst.coverage" NAME="avg_tst Coverage Results" MODIFIED="1726859628004" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/tst_C_py$tst_C.coverage" NAME="tst_C Coverage Results" MODIFIED="1726397997935" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$hook_bmicro.coverage" NAME="hook-bmicro Coverage Results" MODIFIED="1726048458710" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../BMicro/build-recipes" />
+    <SUITE FILE_PATH="coverage/tst_C_py$exposed_brain_brillouin_analysis.coverage" NAME="exposed_brain_brillouin_analysis Coverage Results" MODIFIED="1726392466235" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$sr.coverage" NAME="sr Coverage Results" MODIFIED="1727113853078" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/tst_py$tst.coverage" NAME="tst Coverage Results" MODIFIED="1727004607073" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$average_grid.coverage" NAME="average_grid Coverage Results" MODIFIED="1728070134900" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing/prelim_code" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$afm_brillouin_correlation.coverage" NAME="correlation_analysis Coverage Results" MODIFIED="1732148093795" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/OneDrive/Daten Master-Projekt/Spectroscopy_Analysis" />
+    <SUITE FILE_PATH="coverage/example_script_py$example_script__1_.coverage" NAME="example_script (1) Coverage Results" MODIFIED="1739230999890" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity" />
+    <SUITE FILE_PATH="coverage/transform_2Dmap_py$exposed_brain_brillouin_analysis.coverage" NAME="exposed_brain_brillouin_analysis Coverage Results" MODIFIED="1726253905327" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$avg_tst.coverage" NAME="avg_tst Coverage Results" MODIFIED="1726857191592" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/afm_analysis_py$afm_analysis.coverage" NAME="afm_analysis Coverage Results" MODIFIED="1726502938006" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing/afm" />
+    <SUITE FILE_PATH="coverage/tst_C_py$preCode_TransformDefinitionArea.coverage" NAME="preCode_TransformDefinitionArea Coverage Results" MODIFIED="1726405255132" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
+    <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$spectroscopy_postprocessing.coverage" NAME="spectroscopy_postprocessing Coverage Results" MODIFIED="1732123982334" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="C:\Users\niklas\Documents\GitHub\spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/afm_spectroscopy_postprocessing_py$tst.coverage" NAME="tst Coverage Results" MODIFIED="1727298245555" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$average_heatmap.coverage" NAME="average_heatmap Coverage Results" MODIFIED="1726159830564" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
+    <SUITE FILE_PATH="coverage/tst_py$spectroscopy_postprocessing.coverage" NAME="spectroscopy_postprocessing Coverage Results" MODIFIED="1727011112878" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/_plot_maps_py$brillouin_spectroscopy_postprocessing.coverage" NAME="brillouin_spectroscopy_postprocessing Coverage Results" MODIFIED="1727300802112" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/preCode_ReadH5File_py$preCode_ReadH5File.coverage" NAME="preCode_ReadH5File Coverage Results" MODIFIED="1726622950516" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing/prelim_code" />
+    <SUITE FILE_PATH="coverage/tsts_py$tsts2.coverage" NAME="tsts2 Coverage Results" MODIFIED="1726311889612" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/tst_B_py$tst_B.coverage" NAME="tst_B Coverage Results" MODIFIED="1726316165625" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$tst.coverage" NAME="tst Coverage Results" MODIFIED="1726159558821" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/tsts_py$tsts.coverage" NAME="tsts Coverage Results" MODIFIED="1726313402701" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/example_script_py$example_script__2_.coverage" NAME="example_script (2) Coverage Results" MODIFIED="1739241944843" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples/Example_2_Julia_SpinalCord" />
+    <SUITE FILE_PATH="coverage/brillouin_spectroscopy_postprocessing_py$afm_spectroscopy_postprocessing.coverage" NAME="afm_spectroscopy_postprocessing Coverage Results" MODIFIED="1727345843807" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/brillouin_spectroscopy_postprocessing_py$__main__.coverage" NAME="__main__ Coverage Results" MODIFIED="1727371754583" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../BMicro/bmicro" />
+    <SUITE FILE_PATH="coverage/tst_C_py$preCode_MedianContour.coverage" NAME="preCode_MedianContour Coverage Results" MODIFIED="1726405463903" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
+    <SUITE FILE_PATH="coverage/avg_tst_py$afm_spectroscopy_postprocessing.coverage" NAME="afm_spectroscopy_postprocessing Coverage Results" MODIFIED="1726902381770" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$transform_DefinitionArea.coverage" NAME="transform_DefinitionArea Coverage Results" MODIFIED="1726180151548" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
+    <SUITE FILE_PATH="coverage/tst_C_py$average_heatmap.coverage" NAME="average_heatmap Coverage Results" MODIFIED="1726405095384" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
+    <SUITE FILE_PATH="coverage/brillouin_spectroscopy_postprocessing_py$spectroscopy_postprocessing.coverage" NAME="spectroscopy_postprocessing Coverage Results" MODIFIED="1727371953708" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
+    <SUITE FILE_PATH="coverage/__init___py$example_script__1_.coverage" NAME="example_script (1) Coverage Results" MODIFIED="1739229142257" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity" />
+    <SUITE FILE_PATH="coverage/tst_C_py$transform_2Dmap.coverage" NAME="transform_2Dmap Coverage Results" MODIFIED="1726398784010" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/__init___py$correlation_analysis.coverage" NAME="correlation_analysis Coverage Results" MODIFIED="1739197583653" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/OneDrive/Daten Master-Projekt/Spectroscopy_Analysis" />
+    <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$find_mean_mask.coverage" NAME="find_mean_mask Coverage Results" MODIFIED="1726160686668" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+</project>

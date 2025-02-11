@@ -1,26 +1,27 @@
 import numpy as np
+import os
 import matplotlib.path as mpath
-import os.path
 import h5py
-import threading
 from scipy.spatial.distance import pdist
 
 
-def get_user_input(prompt, timeout=10):
-    user_input = [None]  # To store user input
+def get_roi_from_txt(roi_path, delimiter='\t'):
+    """
+    Load boundary data from text file into Nx2 array.
+    """
+    if os.path.exists(roi_path):
+        # Read the content of the .txt file
+        with open(roi_path, 'r') as f:
+            # Store the content in a list
+            content = f.readlines()
+            # Remove newline characters and split coordinates
+            coordinates = [tuple(line.strip().split(delimiter)) for line in content]
 
-    def ask_input():
-        user_input[0] = input(prompt)
-
-    # Create and start a thread to ask for input
-    input_thread = threading.Thread(target=ask_input)
-    input_thread.start()
-
-    # Wait for the input thread to finish or timeout
-    input_thread.join(timeout)
-
-    # Return the user input if it was provided, otherwise return None
-    return user_input[0]
+            # Convert to Nx2 NumPy array
+            return np.array(coordinates, dtype=float)
+    else:
+        print(f'{roi_path} is not a valid .txt file, continuing without!')
+        return None
 
 
 def mask_contour(contour, grid):
@@ -31,89 +32,6 @@ def mask_contour(contour, grid):
     mask = path.contains_points(grid)
 
     return mask
-
-
-def center_contour(contour):
-    # Calculate the centroid (center of mass) of the contour
-    centroid = np.mean(contour, axis=0)
-
-    # Translate all points so the centroid is at the origin
-    centered_contour = contour - centroid
-
-    return centered_contour, centroid
-
-
-def get_h5rep(h5_path, data_var):
-    assert os.path.exists(h5_path), print(f'{h5_path} does not exist.')
-    assert data_var in ['Brillouin', 'Fluorescence'], (f'{data_var} is not available in h5 file. '
-                                                       f'Please choose Brillouin or Fluorescence.')
-
-    with h5py.File(h5_path, 'r') as h5_file:
-        brillouin_group = h5_file[data_var]
-        rep_numbers = [int(key) for key in brillouin_group.keys() if key.isdigit()]
-
-    return rep_numbers
-
-
-def get_h5metadata(h5_path, data_var):
-    assert os.path.exists(h5_path), f'{h5_path} does not exist.'
-    assert data_var in ['Brillouin', 'Fluorescence'], (f'{data_var} is not available in h5 file. '
-                                                       f'Please choose Brillouin or Fluorescence.')
-
-    # Get number of replicates
-    reps = get_h5rep(h5_path, data_var)
-    assert isinstance(reps, list) and all(isinstance(rep, int) for rep in reps), (f'Reps {reps} '
-                                                                                  f'must be a list of integers.')
-
-    metadata_dict = {}
-    with h5py.File(h5_path, 'r') as h5_file:
-        for rep in reps:
-            # Pixels per micrometer is correct!
-            pixPerMicrometerX = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/micrometerToPixX']
-            pixPerMicrometerX_x, pixPerMicrometerX_y = pixPerMicrometerX.attrs['x'], pixPerMicrometerX.attrs['y']
-
-            pixPerMicrometerY = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/micrometerToPixY']
-            pixPerMicrometerY_x, pixPerMicrometerY_y = pixPerMicrometerY.attrs['x'], pixPerMicrometerY.attrs['y']
-
-            origin = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/origin']
-            origin_x, origin_y = origin.attrs['x'], origin.attrs['y']
-
-            stage = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/positionStage']
-            stage_x, stage_y = stage.attrs['x'], stage.attrs['y']
-
-            scanner = h5_file[f'{data_var}/{rep}/payload/scaleCalibration/positionScanner']
-            scanner_x, scanner_y = scanner.attrs['x'], scanner.attrs['y']
-
-            if data_var == 'Brillouin':
-                # Get grid coordinates from Brillouin measurement
-                brillouin_grid_x = h5_file[f'Brillouin/{rep}/payload/positions-x'][:]
-                brillouin_grid_y = h5_file[f'Brillouin/{rep}/payload/positions-y'][:]
-                brillouin_grid_z = h5_file[f'Brillouin/{rep}/payload/positions-z'][:]
-
-                # Shift Brillouin measurement grid to stage centre, bring coordinates in correct order and scale
-                # ToDo: Fix the y-translation error!
-                shift_y = 1023/2
-                brillouin_grid_x = np.transpose(brillouin_grid_x - stage_x, (1, 2, 0))
-                brillouin_grid_y = np.transpose(brillouin_grid_y - stage_y + shift_y, (1, 2, 0))
-                brillouin_grid_z = np.transpose(brillouin_grid_z - np.min(brillouin_grid_z), (1, 2, 0))  # in µm
-
-                brillouin_grid = np.stack((brillouin_grid_x, brillouin_grid_y, brillouin_grid_z), axis=-1)
-            else:
-                brillouin_grid = None
-
-            # Create a dictionary for the current replicate
-            replicate_metadata = {
-                'pixPerMicrometerX': np.stack((pixPerMicrometerX_x, pixPerMicrometerX_y), axis=-1),
-                'pixPerMicrometerY': np.stack((pixPerMicrometerY_x, pixPerMicrometerX_y), axis=-1),
-                'origin': np.stack((origin_x, origin_y), axis=-1),
-                'scanner': np.stack((scanner_x, scanner_y), axis=-1),
-                'stage': np.stack((stage_x, stage_y), axis=-1),
-                'brillouin_grid': brillouin_grid
-            }
-
-            metadata_dict[rep] = replicate_metadata
-
-    return metadata_dict, reps
 
 
 def check_parameters(params_defined, params_loaded):
@@ -184,25 +102,6 @@ def project_brillouin_dataset(bm_data, bm_metadata, br_intensity_threshold=15):
     bm_grid_proj = np.column_stack([bm_grid_proj[:, :, 0].ravel(), bm_grid_proj[:, :, 1].ravel()])
 
     return bm_data_proj, bm_grid_proj
-
-
-def scatter_with_touching_squares(x, y, plot_size=0):
-    # Compute pairwise distances between points
-    coords = np.vstack([x, y]).T
-    pairwise_distances = pdist(coords)
-    mask = ~np.isclose(pairwise_distances, 0)
-    pairwise_distances = pairwise_distances[mask]
-
-    # Find the minimum distance between any two points
-    min_distance = np.min(pairwise_distances)
-
-    # Calculate the size of the squares to make them touch but not overlap
-    desired_size = min_distance / 2  # Size in coordinate units
-
-    # Set the marker size (area) for squares
-    marker_size = (desired_size ** 2) * np.pi
-
-    return marker_size
 
 
 def rotate3Dgrid(grid, angle, center_x, center_y):

@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='BrainFusion',
-    version='0.1',
+    version='0.1.1',
     packages=find_packages(),
-    install_requires=[
+    install_requires=[  # Used for distributing package; requirements.txt for setting up virtual env for developing
         'h5py >= 3.11.0',
         'matplotlib >= 3.8.4',
         'numpy >= 2.1.1',
@@ -26,5 +26,5 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.12',
 )
