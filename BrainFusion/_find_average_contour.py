@@ -22,32 +22,25 @@ def align_contours(contour_list, grid_list, template_index, fit_routine='ellipse
     # Circularly shift contours to match template and transform all contours to their geometric centre
     modified_contours, centres = circularly_shift_contours(contour_list, template_index)
 
-    # Apply translation to grids
+    # Apply translations to grids
     modified_grids = [grid - centre for grid, centre in zip(grid_list, centres)]
 
     #  Match contours using fitting routine
-    matched_contours, matched_grids = match_contours(modified_contours, modified_grids,
-                                                     modified_contours[template_index], fit_routine)
+    matched_contours, matched_grids = match_contours(modified_contours,
+                                                     modified_grids,
+                                                     modified_contours[template_index],
+                                                     fit_routine)
 
     return matched_contours, matched_grids
 
 
-def find_average_contour(contours_list, average='star_domain', metric='jaccard'):
-    # Calculate the average contour
-    avg_contour = calculate_average_contour(contours_list, average=average)
-
-    # Calculate error
-    errors = calculate_distances(contours_list, avg_contour, metric=metric)
-
-    return avg_contour, errors
-
-
-def circularly_shift_contours(contours, template_index=0):
+def circularly_shift_contours(contours, template_index=0, centre_contours=True):
     assert 0 <= template_index < len(contours), print("Contour template index out of range!")
 
     template_contour = contours[template_index]
     template_centre = np.mean(template_contour, axis=0)
-    template_contour = template_contour - template_centre
+    if centre_contours:
+        template_contour = template_contour - template_centre
     modified_contours = []
     centres = []
 
@@ -61,7 +54,8 @@ def circularly_shift_contours(contours, template_index=0):
 
         # Centre contours around geometric mean
         contour_centre = np.mean(contour, axis=0)
-        contour = contour - contour_centre
+        if centre_contours:
+            contour = contour - contour_centre
 
         # Calculate the Euclidean distance between the starting point of reference_contour and all points in contour
         distances = np.linalg.norm(contour - template_contour[0], axis=1)
@@ -78,6 +72,9 @@ def circularly_shift_contours(contours, template_index=0):
 
         modified_contours.append(shifted_contour)
         centres.append(contour_centre)
+
+        # Close contours
+        contour[:, -1] = contour[:, 0]
 
     return modified_contours, centres
 
@@ -112,10 +109,10 @@ def match_contour_with_ellipse(A, B, grid):
     if ellipse_A is None or ellipse_B is None:
         print("No ellipse could be fitted to the contours! Continue with original shapes.")
         return A, None, None, None  # Return original if ellipse can't be fitted
-    center_A = np.array(ellipse_A[0])
+    center_A = np.array(ellipse_A[0])  # Important: Ellipse fit centre does not always align with geometric mean!
     center_B = np.array(ellipse_B[0])
     rotation_angle = ellipse_B[2] - ellipse_A[2]  # Angle difference
-    if 90 < rotation_angle:
+    if rotation_angle > 90:
         rotation_angle = rotation_angle - 180
     elif rotation_angle < -90:
         rotation_angle = rotation_angle + 180
@@ -138,10 +135,19 @@ def rotate_coordinate_system(contour, angle, center):
     return (contour - center).dot(R.T) + center
 
 
+def find_average_contour(contours_list, average='star_domain', metric='jaccard'):
+    # Calculate the average contour
+    avg_contour = calculate_average_contour(contours_list, average=average)
+
+    # Calculate error
+    errors = calculate_distances(contours_list, avg_contour, metric=metric)
+
+    return avg_contour, errors
+
+
 def calculate_average_contour(contours, average='star_domain', num_bins=360):
     if average == 'star_domain':
-        def is_star_domain(contour, tol=10):
-            centre = [0, 0]
+        def is_star_domain(contour, centre, tol=10):
             polygon = Polygon(contour)  # Convert contour to a polygon
             center_point = Point(centre)
 
@@ -163,7 +169,7 @@ def calculate_average_contour(contours, average='star_domain', num_bins=360):
                 elif hasattr(intersection, "geoms"):  # Multiple intersections
                     intersections = list(intersection.geoms)
                 else:
-                    return False  # Unexpected case
+                    raise Exception("An error occurred while checking if polygon is star domain.")
 
                 distances = [boundary_point.distance(inter) for inter in intersections]
                 if not all(d < tol for d in distances):
@@ -172,13 +178,13 @@ def calculate_average_contour(contours, average='star_domain', num_bins=360):
             return True
 
         # Check if all contours are star domains with respect to the given centre
-        assert all(is_star_domain(contour) for contour in contours), ('Not all contours define star domains with '
-                                                                      'respect to their geometric centre!')
+        assert all(is_star_domain(contour, [0, 0]) for contour in contours), ('Not all contours define star '
+                                                                              'domains with respect to their geometric '
+                                                                              'centre!')
 
         # Convert contours to polar coordinates
         angles = []
         radii = []
-
         for contour in contours:
             x, y = contour[:, 0], contour[:, 1]
             theta = np.arctan2(contour[:, 1], contour[:, 0])  # Compute angles
@@ -219,48 +225,46 @@ def calculate_average_contour(contours, average='star_domain', num_bins=360):
 
 
 def calculate_distances(contours, master_contour, metric='jaccard'):
-    def jaccard_distance(curve_a, curve_b):
-        # Create Polygon objects
-        polya = Polygon(curve_a)
-        polyb = Polygon(curve_b)
-
-        # Calculate the intersection and union of the polygons
-        intersection_area = polya.intersection(polyb).area
-        union_area = polya.union(polyb).area
-
-        # Calculate the Jaccard Index based on areas
-        jaccard_index = intersection_area / union_area
-
-        # Calculate the Jaccard Distance
-        jaccard_distance = 1 - jaccard_index
-
-        return jaccard_distance
-
-    def frechet_distance(curve_a, curve_b):
-        try:
-            frechet_dist = frdist(np.array(curve_a), np.array(curve_b))
-        except RuntimeWarning:
-            print('Recursion error while calculating Frechet_distance!')
-            frechet_dist = np.nan
-
-        return frechet_dist
-
-    def hausdorff_distance(curve_a, curve_b):
-        return max(
-            directed_hausdorff(curve_a, curve_b)[0],
-            directed_hausdorff(curve_b, curve_a)[0]
-        )
-
     results = []
     for i, contour in enumerate(contours):
         if metric == 'jaccard':
+            def jaccard_distance(curve_a, curve_b):
+                # Create Polygon objects
+                polya = Polygon(curve_a)
+                polyb = Polygon(curve_b)
+
+                # Calculate the intersection and union of the polygons
+                intersection_area = polya.intersection(polyb).area
+                union_area = polya.union(polyb).area
+
+                # Calculate the Jaccard Index based on areas
+                jaccard_index = intersection_area / union_area
+
+                # Calculate the Jaccard Distance
+                jaccard_distance = 1 - jaccard_index
+                return jaccard_distance
+
             dist = jaccard_distance(contour, master_contour)
 
         elif metric == 'frechet':
+            def frechet_distance(curve_a, curve_b):
+                try:
+                    frechet_dist = frdist(np.array(curve_a), np.array(curve_b))
+                except RuntimeWarning:
+                    print('Recursion error while calculating Frechet_distance!')
+                    frechet_dist = np.nan
+                return frechet_dist
+
             # Fréchet distance
             dist = frechet_distance(contour, master_contour)
 
         elif metric == 'hausdorff':
+            def hausdorff_distance(curve_a, curve_b):
+                return max(
+                    directed_hausdorff(curve_a, curve_b)[0],
+                    directed_hausdorff(curve_b, curve_a)[0]
+                )
+
             # Hausdorff distance
             dist = hausdorff_distance(contour, master_contour)
 

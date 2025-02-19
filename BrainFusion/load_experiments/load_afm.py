@@ -74,32 +74,31 @@ def load_afm_spinalcord(folder_path):
     for filename in myelin_i_filenames:
         image_path = os.path.join(folder_path, filename)
         meyelin_grid, myelin_data = read_parquet_file(image_path, False)
-        if 'right' in filename:
-            pass
+
+        # ToDo: Remove Downsample
+        sample_idx = np.random.choice(len(myelin_data), size=100000, replace=False)
+        meyelin_grid = np.stack((meyelin_grid[:, 0][sample_idx], meyelin_grid[:, 1][sample_idx]), axis=1)
+        myelin_data = myelin_data[sample_idx]
+
         myelin_grids.append(meyelin_grid)
         myelin_datasets.append(myelin_data)
 
     # Load all myelin contours in a list
-    myelin_c_filenames = [f for f in os.listdir(folder_path) if 'ani' in f and f.endswith("_whitematter_outline.txt")]
+    boundary = "_whitematter_outline"
+    myelin_c_filenames = [f for f in os.listdir(folder_path) if 'ani' in f and f.endswith(boundary + ".txt")]
     myelin_contours = []
     for index, filename in enumerate(myelin_c_filenames):
         file_path = os.path.join(folder_path, filename)
         myelin_contour = get_roi_from_txt(file_path, delimiter=',')
-        if 'right' in filename:
-            pass
         myelin_contours.append(myelin_contour)
 
     # Load the template AFM image
     afm_i_filename = os.path.join(folder_path, f'overview_#{exp_num}_image_roi_linearised.parquet')
     afm_image = read_parquet_file(afm_i_filename, True)
-    if 'right' in afm_i_filename:
-        pass
 
     # Load the template AFM contour
     afm_c_filename = os.path.join(folder_path, f'overview_#{exp_num}_whitematter_outline.txt')
     afm_contour = get_roi_from_txt(os.path.join(folder_path, afm_c_filename), delimiter=',')
-    if 'right' in afm_c_filename:
-        pass
 
     # Load the AFM results csv file and extract data and grid coordinates
     data_path = os.path.join(folder_path, 'data.csv')
@@ -109,12 +108,10 @@ def load_afm_spinalcord(folder_path):
 
     # Load AFM grid
     afm_grid = np.stack((np.array(data['x_image']), np.array(data['y_image'])), axis=-1)
-    if 'right' in afm_c_filename:
-        pass
 
     # Calculate scaling factor in pix/µm
     afm_scale = data['pix_per_m'][0] * 1e-6
-    myelin_scale = 4  #ToDo: FIX
+    myelin_scale = 4  # ToDo: FIX
 
     # Scale AFM / Myelin contours and grids to µm
     afm_grid = afm_grid / afm_scale
@@ -128,7 +125,8 @@ def load_afm_spinalcord(folder_path):
 def read_parquet_file(image_path, image=False):
     df = pd.read_parquet(image_path, engine='pyarrow')
     if image:
-        img = df.pivot(index="y", columns="x", values="value_background_corrected").to_numpy()
+        df = df.sort_values(by=["y", "x"])
+        img = df.pivot(index="y", columns="x", values="value_orig")
         return img
     else:
         grid = df[['x', 'y']].to_numpy()

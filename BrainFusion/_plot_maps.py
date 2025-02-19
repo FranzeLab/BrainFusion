@@ -106,6 +106,8 @@ def plot_contours(average_contour, matched_contours):
     # Plot the averaged contour
     plt.plot(average_contour[:, 0], average_contour[:, 1], color='blue', linestyle='--', linewidth=4,
              label='Averaged Contour')
+    plt.scatter(average_contour[0, 0], average_contour[0, 1], color='blue', s=25, zorder=6,
+                label='First Avg. Coordinate')
 
     plt.legend()
     plt.axis('equal')
@@ -210,7 +212,7 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
                               vmin=vmin,
                               vmax=vmax)
 
-    axes[1].legend()
+    axes[1].legend(loc=1)
     axes[1].set_title('Transformed data map', fontsize=20)
     axes[1].grid()
     axes[1].axis('equal')
@@ -287,6 +289,46 @@ def plot_average_map(data_maps, grid_trafos, data_avg, grid_avg, average_contour
 
     # Add colorbar
     cbar = fig.colorbar(heatmap, ax=axes[1])
+    cbar.ax.tick_params(labelsize=20)
+    cbar.set_label(label, size=30)
+
+    # Adjust layout to avoid overlap
+    plt.tight_layout()
+
+    return fig
+
+
+def plot_average_map2(data_avg, grid_avg, average_contour, label='', cmap='viridis', marker_size=15,
+                      vmin=None, vmax=None, mask=True):
+    # Create plot
+    fig = plt.figure(figsize=(8, 8))
+
+    # Average contour
+    plt.plot(average_contour[:, 0], average_contour[:, 1], 'b--', linewidth=5, label='AFM Contour')
+
+    # Mask average data
+    if mask is True:
+        mask_2 = mask_contour(average_contour, grid_avg)
+    else:
+        mask_2 = np.full(grid_avg.shape[0], True)
+
+    # Plot average data
+    heatmap = plt.scatter(np.ma.masked_where(~mask_2, grid_avg[:, 0]),
+                          np.ma.masked_where(~mask_2, grid_avg[:, 1]),
+                          c=data_avg,
+                          cmap=cmap,
+                          s=marker_size,
+                          marker='s',
+                          alpha=1,
+                          vmin=vmin,
+                          vmax=vmax)
+
+    plt.legend()
+    plt.grid()
+    plt.axis('equal')
+
+    # Add colorbar
+    cbar = fig.colorbar(heatmap)
     cbar.ax.tick_params(labelsize=20)
     cbar.set_label(label, size=30)
 
@@ -531,3 +573,53 @@ def format_p_value(p):
         return f"p={p:.2f}"
     else:
         return "Invalid p-value"
+
+
+def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', marker_size=20,
+                        vmin=None, vmax=None, **kwargs):
+    avg_contour = analysis_file['average_contour']
+    avg_data = analysis_file['interpolated_data']
+    avg_grid = analysis_file['interpolated_grid']
+    """
+    # Plot original maps on background images and plot original/transformed maps next to each other
+    matched_contours = []
+    for index, _ in enumerate(analysis_file['raw_data']):
+        index = str(index)
+        # Plot original and transformed data grids
+        fig = plot_trafo_map(analysis_file['matched_contour'][index],
+                             avg_contour,
+                             analysis_file['raw_data'][index],
+                             analysis_file['matched_grid'][index],
+                             analysis_file['trafo_grid'][index],
+                             label=label,
+                             cmap=cmap,
+                             marker_size=marker_size,
+                             vmin=vmin,
+                             vmax=vmax,
+                             mask=True)
+        output_path = os.path.join(results_folder, f'Transformed_Section_{index}.png')
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # Save matched contour
+        matched_contours.append(analysis_file['matched_contour'][index])
+
+    # Plot all original contours and the averaged contour
+    fig = plot_contours(avg_contour, matched_contours)
+    output_path = os.path.join(results_folder, 'matched_mask_contours.png')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    """
+
+    fig = plot_average_map2(avg_data,
+                            avg_grid,
+                            avg_contour,
+                            label=label,
+                            cmap=cmap,
+                            marker_size=120,
+                            vmin=vmin,
+                            vmax=vmax)
+
+    output_path = os.path.join(results_folder, f'Averaged_Myelin_Maps.png')
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
