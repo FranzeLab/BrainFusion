@@ -6,22 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="820121ef-d84e-4cb5-9d5e-ff556abbb7f2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_find_average_contour.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_find_average_contour.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_gmm_correlation.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_gmm_correlation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BrainFusion/_plot_maps.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_plot_maps.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/brainfusion.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/brainfusion.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/example_script.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/params.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/params.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Averaged_Modulus_Maps.png" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Averaged_Modulus_Maps.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/BrainFusion_AFM_Analysis.h5" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/BrainFusion_AFM_Analysis.h5" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Transformed_2024_06_07_#1_stage37.5_WT.png" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Transformed_2024_06_07_#1_stage37.5_WT.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Transformed_2024_06_07_#2_stage37.5_WT.png" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Transformed_2024_06_07_#2_stage37.5_WT.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Transformed_2024_06_07_#3_stage37.5_WT.png" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/Transformed_2024_06_07_#3_stage37.5_WT.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/contours.png" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/results/contours.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/load_experiments/load_afm.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/load_experiments/load_afm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -207,6 +192,7 @@
       <workItem from="1739988782276" duration="11340000" />
       <workItem from="1740001847402" duration="4000" />
       <workItem from="1740003185625" duration="13000" />
+      <workItem from="1740056957341" duration="336000" />
     </task>
     <servers />
   </component>
@@ -235,6 +221,11 @@
           <url>file://$PROJECT_DIR$/spectroscopy_postprocessing/prelim_code/average_grid.py</url>
           <line>164</line>
           <option name="timeStamp" value="87" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/BrainFusion/_plot_maps.py</url>
+          <line>178</line>
+          <option name="timeStamp" value="88" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -311,6 +302,7 @@
     <SUITE FILE_PATH="coverage/tst_C_py$preCode_MedianContour.coverage" NAME="preCode_MedianContour Coverage Results" MODIFIED="1726405463903" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
     <SUITE FILE_PATH="coverage/avg_tst_py$afm_spectroscopy_postprocessing.coverage" NAME="afm_spectroscopy_postprocessing Coverage Results" MODIFIED="1726902381770" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
     <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$transform_DefinitionArea.coverage" NAME="transform_DefinitionArea Coverage Results" MODIFIED="1726180151548" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
+    <SUITE FILE_PATH="coverage/_plot_maps_py$example_script_2.coverage" NAME="example_script_2 Coverage Results" MODIFIED="1740057293687" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples/Example_2_Julia_SpinalCord" />
     <SUITE FILE_PATH="coverage/tst_C_py$average_heatmap.coverage" NAME="average_heatmap Coverage Results" MODIFIED="1726405095384" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Code_Examples" />
     <SUITE FILE_PATH="coverage/brillouin_spectroscopy_postprocessing_py$spectroscopy_postprocessing.coverage" NAME="spectroscopy_postprocessing Coverage Results" MODIFIED="1727371953708" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
     <SUITE FILE_PATH="coverage/__init___py$example_script__1_.coverage" NAME="example_script (1) Coverage Results" MODIFIED="1739229142257" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity" />

@@ -170,12 +170,14 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
     # Plot the original contours
     axes[0].plot(contour[:, 0], contour[:, 1], color='grey', linestyle='-', linewidth=3,
                  label='Original Contour')
-    axes[0].plot(avg_contour[:, 0], avg_contour[:, 1], color='blue', linestyle='--', linewidth=4,
-                 label='Average Contour')
+    #axes[0].plot(avg_contour[:, 0], avg_contour[:, 1], color='blue', linestyle='--', linewidth=4,
+    #             label='Average Contour')
 
     # Original grid
     if mask:
         mask_1 = mask_contour(contour, grid)
+        #mask_tmp = (trafo_grid >= 0).all(axis=1)
+        #mask_1 = mask_1 & mask_tmp
     else:
         mask_1 = np.full(grid.shape[0], True)
 
@@ -193,14 +195,16 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
     axes[0].axis('equal')
 
     # Plot the transformed contours
-    axes[1].plot(contour[:, 0], contour[:, 1], color='grey', linestyle='-', linewidth=3,
-                 label='Original Contour')
+    #axes[1].plot(contour[:, 0], contour[:, 1], color='grey', linestyle='-', linewidth=3,
+    #             label='Original Contour')
     axes[1].plot(avg_contour[:, 0], avg_contour[:, 1], color='blue', linestyle='--', linewidth=4,
                  label='Average Contour')
 
     # Transformed grid
     if mask:
         mask_2 = mask_contour(avg_contour, trafo_grid)
+        #mask_tmp = (trafo_grid >= 0).all(axis=1)
+        #mask_2 = mask_2 & mask_tmp
     else:
         mask_2 = np.full(trafo_grid.shape[0], True)
 
@@ -580,7 +584,7 @@ def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', ma
     avg_contour = analysis_file['average_contour']
     avg_data = analysis_file['interpolated_data']
     avg_grid = analysis_file['interpolated_grid']
-    """
+
     # Plot original maps on background images and plot original/transformed maps next to each other
     matched_contours = []
     for index, _ in enumerate(analysis_file['raw_data']):
@@ -609,7 +613,7 @@ def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', ma
     output_path = os.path.join(results_folder, 'matched_mask_contours.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
-    """
+
 
     fig = plot_average_map2(avg_data,
                             avg_grid,
