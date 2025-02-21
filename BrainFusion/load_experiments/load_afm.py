@@ -56,7 +56,7 @@ def load_afm_brain(folder_path):
     return afm_data, afm_grid, img, contour, scale
 
 
-def load_afm_spinalcord(folder_path):
+def load_afm_spinalcord(folder_path, boundary="_whitematter_outline"):
     """
     Function to load an AFM experiment analysed with the batchforce Matlab library to correlate stiffness values with
     imaging data.
@@ -76,7 +76,7 @@ def load_afm_spinalcord(folder_path):
         meyelin_grid, myelin_data = read_parquet_file(image_path, False)
 
         # ToDo: Remove Downsample
-        sample_idx = np.random.choice(len(myelin_data), size=100000, replace=False)
+        sample_idx = np.random.choice(len(myelin_data), size=1000, replace=False)
         meyelin_grid = np.stack((meyelin_grid[:, 0][sample_idx], meyelin_grid[:, 1][sample_idx]), axis=1)
         myelin_data = myelin_data[sample_idx]
 
@@ -84,7 +84,6 @@ def load_afm_spinalcord(folder_path):
         myelin_datasets.append(myelin_data)
 
     # Load all myelin contours in a list
-    boundary = "_whitematter_outline"
     myelin_c_filenames = [f for f in os.listdir(folder_path) if 'ani' in f and f.endswith(boundary + ".txt")]
     myelin_contours = []
     for index, filename in enumerate(myelin_c_filenames):
@@ -102,24 +101,18 @@ def load_afm_spinalcord(folder_path):
 
     # Load the AFM results csv file and extract data and grid coordinates
     data_path = os.path.join(folder_path, 'data.csv')
-    data = pd.read_csv(data_path)
-    afm_data = {'modulus': data['modulus']}
-    afm_data = {key: np.array(value) for key, value in afm_data.items()}
+    if os.path.exists(data_path):
+        data = pd.read_csv(data_path)
+        afm_data = {'modulus': data['modulus']}
+        afm_data = {key: np.array(value) for key, value in afm_data.items()}
 
-    # Load AFM grid
-    afm_grid = np.stack((np.array(data['x_image']), np.array(data['y_image'])), axis=-1)
+        # Load AFM grid
+        afm_grid = np.stack((np.array(data['x_image']), np.array(data['y_image'])), axis=-1)
+    else:
+        afm_data, afm_grid = None, None
+        print('No AFM data file found, continuing without!')
 
-    # Calculate scaling factor in pix/µm
-    afm_scale = data['pix_per_m'][0] * 1e-6
-    myelin_scale = 4  # ToDo: FIX
-
-    # Scale AFM / Myelin contours and grids to µm
-    afm_grid = afm_grid / afm_scale
-    afm_contour = afm_contour / afm_scale
-    myelin_grids = [grid / myelin_scale for grid in myelin_grids]
-    myelin_contours = [contour / myelin_scale for contour in myelin_contours]
-
-    return myelin_grids, myelin_datasets, myelin_contours, afm_image, afm_contour, afm_data, afm_grid, afm_scale, myelin_scale
+    return myelin_grids, myelin_datasets, myelin_contours, afm_image, afm_contour, afm_data, afm_grid
 
 
 def read_parquet_file(image_path, image=False):

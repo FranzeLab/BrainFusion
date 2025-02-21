@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.interpolate import griddata
-from ._find_average_contour import interpolate_contour, align_contours, find_average_contour, circularly_shift_contours
+from ._find_average_contour import interpolate_contour, align_contours, find_average_contour, circularly_shift_contours, align_sc_contours
 from ._transform_2Dmap import extend_grid, transform_grid2contour
 from ._gmm_correlation import fit_coordinates_gmm
 
@@ -99,14 +99,13 @@ def process_multiple_experiments(load_experiment_func, base_folder, results_fold
     return structured_data
 
 
-def process_single_experiments(load_experiment_func, base_folder, folder_name, **kwargs):
+def process_single_experiments(load_experiment_func, base_folder, folder_name, contour_interp_n=200, **kwargs):
     # Create results folder
     results_folder = os.path.join(base_folder, folder_name, 'results')
     os.makedirs(results_folder, exist_ok=True)
 
     # Load 2D data from experiment folder
-    (myelin_grids, myelin_datasets, myelin_contours, afm_image,
-     afm_contour, afm_data, afm_grid, afm_scale, myelin_scale) = load_experiment_func(
+    myelin_grids, myelin_datasets, myelin_contours, afm_image, afm_contour, afm_data, afm_grid = load_experiment_func(
         os.path.join(base_folder, folder_name))
 
     # Use AFM contour as standard
@@ -119,11 +118,10 @@ def process_single_experiments(load_experiment_func, base_folder, folder_name, *
     # Interpolate contours to same length
     contours_interp = []
     for contour in myelin_contours:
-        contours_interp.append(interpolate_contour(contour, num_points=100))
+        contours_interp.append(interpolate_contour(contour, num_points=contour_interp_n))
 
     # Align contours and apply respective transformations to data maps
-    matched_contours, matched_grids = align_contours(contours_interp, myelin_grids, template_index=tmp_index,
-                                                     fit_routine=None)
+    matched_contours, matched_grids = align_sc_contours(contours_interp, myelin_grids, template_index=tmp_index)
 
     # Use AFM contour as master contour for transforming myelin data
     avg_contour = matched_contours[0]
@@ -159,7 +157,6 @@ def process_single_experiments(load_experiment_func, base_folder, folder_name, *
                        'original_contour': contours_interp,
                        'trafo_contour': trafo_contours,
                        'brightfield_image': afm_image,
-                       'pix_per_um': {'afm_scale': afm_scale, 'myelin_scale': myelin_scale},
                        'average_contour': avg_contour,
                        'template_contour': matched_contours[tmp_index],
                        'interpolated_data': avg_data,

@@ -4,6 +4,9 @@ from scipy.interpolate import interp1d
 from scipy.spatial.distance import directed_hausdorff
 from frechetdist import frdist
 from shapely.geometry import Polygon, Point, LineString
+from skimage.transform import AffineTransform
+from scipy.stats import linregress
+import matplotlib.pyplot as plt
 
 
 def interpolate_contour(contour, num_points):
@@ -32,6 +35,26 @@ def align_contours(contour_list, grid_list, template_index, fit_routine='ellipse
                                                      fit_routine)
 
     return matched_contours, matched_grids
+
+
+def align_sc_contours(contour_list, grid_list, template_index):
+    #  Match contours using bbox fitting routine
+    matched_contours = []
+    matched_grids = []
+    for i, contour in enumerate(contour_list):
+        contour_trafo, template_trafo = match_contour_with_bbox(contour, contour_list[template_index])
+        matched_contour = contour_trafo(contour)
+        matched_grid = contour_trafo(grid_list[i])
+
+        matched_contours.append(matched_contour)
+        matched_grids.append(matched_grid)
+
+    # Circularly shift contours to match template and transform all contours to their geometric centre
+    modified_contours, _ = circularly_shift_contours(matched_contours,
+                                                     template_index=template_index,
+                                                     centre_contours=False)
+
+    return modified_contours, matched_grids
 
 
 def circularly_shift_contours(contours, template_index=0, centre_contours=True):
@@ -70,11 +93,11 @@ def circularly_shift_contours(contours, template_index=0, centre_contours=True):
         if get_contour_orientation(contour) != orientation:
             shifted_contour = shifted_contour[::-1]  # Reverse the order
 
+        # Close contours
+        shifted_contour[-1, :] = shifted_contour[0, :]
+
         modified_contours.append(shifted_contour)
         centres.append(contour_centre)
-
-        # Close contours
-        contour[:, -1] = contour[:, 0]
 
     return modified_contours, centres
 
@@ -92,14 +115,14 @@ def match_contours(contours, grids, template_contour, fit_routine='ellipse'):
     matched_grids = []
     for i, contour in enumerate(contours):
         if fit_routine == 'ellipse':
-            matched_contour, grid_rotated, _, _, _ = match_contour_with_ellipse(contour, template_contour, grids[i])
+            matched_contour, matched_grid, _, _, _ = match_contour_with_ellipse(contour, template_contour, grids[i])
         else:
             matched_contour = contour
-            grid_rotated = grids[i]
+            matched_grid = grids[i]
             print("No fit routine applied to match contours!")
 
         matched_contours.append(matched_contour)
-        matched_grids.append(grid_rotated)
+        matched_grids.append(matched_grid)
     return matched_contours, matched_grids
 
 
@@ -133,6 +156,65 @@ def rotate_coordinate_system(contour, angle, center):
     R = np.array([[np.cos(angle), -np.sin(angle)],
                   [np.sin(angle), np.cos(angle)]])
     return (contour - center).dot(R.T) + center
+
+
+def match_contour_with_bbox(a, b):
+    # Translate contours to their geometric centre
+    centre_a = -np.mean(a, axis=0)
+    a_cent = a + centre_a
+    centre_b = -np.mean(b, axis=0)
+    b_cent = b + centre_b
+
+    # Get boundary box corner points
+    source_points = extract_bbox_corners(a_cent)
+    target_points = extract_bbox_corners(b_cent)
+
+    # Scale in x and y
+    scale_x_lower = (target_points[3] - target_points[0]) / (source_points[3] - source_points[0])
+    scale_x_upper = (target_points[2] - target_points[1]) / (source_points[2] - source_points[1])
+    scale_x = np.nanmean([scale_x_lower[0], scale_x_upper[1]])
+
+    scale_y_left = (target_points[1] - target_points[0]) / (source_points[1] - source_points[0])
+    scale_y_right = (target_points[2] - target_points[3]) / (source_points[2] - source_points[3])
+    scale_y = np.nanmean([scale_y_left[1], scale_y_right[1]])
+
+    rot_ang = regression_alignment_angle(a_cent, b_cent)
+
+    # Translate contours to match their first coordinates
+    translate_a = [0, 0]  #b_cent[0, :] - a_cent[0, :]
+
+    # Define Transformation matrix for a and b
+    affine_transformation_a = (AffineTransform(translation=(centre_a[0], centre_a[1])) +
+                               AffineTransform(scale=(scale_x, scale_y)) +
+                               AffineTransform(rotation=rot_ang) +
+                               AffineTransform(translation=(translate_a[0], translate_a[1]))
+                               )
+    affine_transformation_b = AffineTransform(translation=(centre_b[0], centre_b[1]))
+
+    return affine_transformation_a, affine_transformation_b
+
+
+def extract_bbox_corners(contour):
+    """Extract key points from the four corners of the bounding box."""
+    x_min, y_min = np.min(contour, axis=0)
+    x_max, y_max = np.max(contour, axis=0)
+    return np.array([[x_min, y_min], [x_min, y_max], [x_max, y_max], [x_max, y_min]])
+
+
+def regression_alignment_angle(source_contour, target_contour):
+    """Fit a line to the right side of the contours and compute rotation."""
+    right_source = source_contour[source_contour[:, 0] > np.percentile(source_contour[:, 0], 98)]
+    right_target = target_contour[target_contour[:, 0] > np.percentile(target_contour[:, 0], 98)]
+    slope_source, _, _, _, _ = linregress(right_source[:, 0], right_source[:, 1])
+    slope_target, _, _, _, _ = linregress(right_target[:, 0], right_target[:, 1])
+    angle = np.arctan(slope_target) - np.arctan(slope_source)
+    # Adjust angle to wrap around within the range of ±π/2
+    if angle > np.pi / 2:
+        angle -= np.pi
+    elif angle < -np.pi / 2:
+        angle += np.pi
+
+    return 0  #angle
 
 
 def find_average_contour(contours_list, average='star_domain', metric='jaccard'):

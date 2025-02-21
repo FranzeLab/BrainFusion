@@ -587,8 +587,9 @@ def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', ma
 
     # Plot original maps on background images and plot original/transformed maps next to each other
     matched_contours = []
-    for index, _ in enumerate(analysis_file['raw_data']):
-        index = str(index)
+    for index, c in enumerate(analysis_file['raw_data']):
+        if type(c) is list:
+            index = int(index)
         # Plot original and transformed data grids
         fig = plot_trafo_map(analysis_file['matched_contour'][index],
                              avg_contour,
