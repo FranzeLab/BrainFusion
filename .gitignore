@@ -2,6 +2,7 @@
 building/*
 */prelim_code/
 */correlation/
+*/Example_2_JB_SpinalCord/data/
 */.idea/
 .bash_history/
 .ssh/*
@@ -15,6 +16,10 @@ __pycache__/
 
 # C extensions
 *.so
+*.h5
+*.parquet
+*.mat
+*.png
 
 # Distribution / packaging
 .Python
