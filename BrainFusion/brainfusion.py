@@ -100,17 +100,20 @@ def process_multiple_experiments(load_experiment_func, base_folder, results_fold
 
 
 def process_single_experiments(load_experiment_func, base_folder, folder_name, contour_interp_n=200, **kwargs):
+    print(f'Processing folder: {folder_name}.')
     # Create results folder
     results_folder = os.path.join(base_folder, folder_name, 'results')
     os.makedirs(results_folder, exist_ok=True)
 
     # Load 2D data from experiment folder
-    myelin_grids, myelin_datasets, myelin_contours, afm_image, afm_contour, afm_data, afm_grid = load_experiment_func(
-        os.path.join(base_folder, folder_name))
+    myelin_grids, myelin_datasets, myelin_contours, myelin_points, afm_image, afm_contour, afm_point, afm_data, afm_grid = (
+        load_experiment_func(os.path.join(base_folder, folder_name))
+    )
 
     # Use AFM contour as standard
     tmp_index = 0
     myelin_contours.insert(tmp_index, afm_contour)
+    myelin_points.insert(tmp_index, afm_point)
 
     # Insert dummy map for 'align_contours' function
     myelin_grids.insert(tmp_index, myelin_grids[tmp_index])
@@ -121,7 +124,8 @@ def process_single_experiments(load_experiment_func, base_folder, folder_name, c
         contours_interp.append(interpolate_contour(contour, num_points=contour_interp_n))
 
     # Align contours and apply respective transformations to data maps
-    matched_contours, matched_grids = align_sc_contours(contours_interp, myelin_grids, template_index=tmp_index)
+    matched_contours, matched_grids = align_sc_contours(contours_interp, myelin_grids, init_points=myelin_points,
+                                                        template_index=tmp_index)
 
     # Use AFM contour as master contour for transforming myelin data
     avg_contour = matched_contours[0]
@@ -129,12 +133,14 @@ def process_single_experiments(load_experiment_func, base_folder, folder_name, c
     matched_contours.pop(0)
     matched_grids.pop(0)
     myelin_grids.pop(0)
+    myelin_points.pop(0)
 
     # Transform maps to average map
     trafo_data_maps, trafo_grids, trafo_contours, extended_grid = [], [], [], []
     for index, contour in enumerate(matched_contours):
         # Transform original grid to coordinate system of deformed contour
-        trafo_grid, trafo_contour = transform_grid2contour(contour, avg_contour, matched_grids[index])
+        trafo_grid, trafo_contour = transform_grid2contour(contour, avg_contour, matched_grids[index],
+                                                           progress=f' {index+1} out of {len(matched_contours)+1}')
 
         # Interpolate maps from deformed grids to common regular grid
         extended_grid = extend_grid(matched_grids[tmp_index], 400, 400)

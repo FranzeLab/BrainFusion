@@ -76,7 +76,7 @@ def load_afm_spinalcord(folder_path, boundary="_whitematter_outline"):
         meyelin_grid, myelin_data = read_parquet_file(image_path, False)
 
         # ToDo: Remove Downsample
-        sample_idx = np.random.choice(len(myelin_data), size=1000, replace=False)
+        sample_idx = np.random.choice(len(myelin_data), size=100, replace=False)
         meyelin_grid = np.stack((meyelin_grid[:, 0][sample_idx], meyelin_grid[:, 1][sample_idx]), axis=1)
         myelin_data = myelin_data[sample_idx]
 
@@ -91,6 +91,14 @@ def load_afm_spinalcord(folder_path, boundary="_whitematter_outline"):
         myelin_contour = get_roi_from_txt(file_path, delimiter=',')
         myelin_contours.append(myelin_contour)
 
+    # Load all myelin starting points in a list
+    myelin_p_filenames = [p for p in os.listdir(folder_path) if 'ani' in p and p.endswith("_midline_closing_points.txt")]
+    myelin_points = []
+    for index, filename in enumerate(myelin_p_filenames):
+        file_path = os.path.join(folder_path, filename)
+        myelin_point = get_roi_from_txt(file_path, delimiter=',')[0]
+        myelin_points.append(myelin_point)
+
     # Load the template AFM image
     afm_i_filename = os.path.join(folder_path, f'overview_#{exp_num}_image_roi_linearised.parquet')
     afm_image = read_parquet_file(afm_i_filename, True)
@@ -98,6 +106,10 @@ def load_afm_spinalcord(folder_path, boundary="_whitematter_outline"):
     # Load the template AFM contour
     afm_c_filename = os.path.join(folder_path, f'overview_#{exp_num}_whitematter_outline.txt')
     afm_contour = get_roi_from_txt(os.path.join(folder_path, afm_c_filename), delimiter=',')
+
+    # Load the template AFM starting point
+    afm_p_filename = os.path.join(folder_path, f'overview_#{exp_num}_midline_closing_points.txt')
+    afm_point = get_roi_from_txt(os.path.join(folder_path, afm_p_filename), delimiter=',')[0]
 
     # Load the AFM results csv file and extract data and grid coordinates
     data_path = os.path.join(folder_path, 'data.csv')
@@ -112,7 +124,7 @@ def load_afm_spinalcord(folder_path, boundary="_whitematter_outline"):
         afm_data, afm_grid = None, None
         print('No AFM data file found, continuing without!')
 
-    return myelin_grids, myelin_datasets, myelin_contours, afm_image, afm_contour, afm_data, afm_grid
+    return myelin_grids, myelin_datasets, myelin_contours, myelin_points, afm_image, afm_contour, afm_point, afm_data, afm_grid
 
 
 def read_parquet_file(image_path, image=False):

@@ -18,9 +18,11 @@ for folder_name in os.listdir(base_folder):
             export_analysis(afm_analysis_path, afm_analysis, afm_params)
         # Import the pre-computed analysis file for further post-processing steps
         else:
+            print(f'Importing analysis file from: {folder_name}.')
             afm_analysis, afm_params_loaded = import_analysis(afm_analysis_path)
             check_parameters(afm_params, afm_params_loaded)
 
         # Plot results
+        print(f'Plotting spinal cord data: {folder_name}.')
         plot_sc_experiments(afm_analysis, **afm_params, results_folder=os.path.join(base_folder, folder_name, 'results'),
-                            label='', cmap='grey', marker_size=20, vmin=None, vmax=None)
+                            label='', cmap='grey', marker_size=50, vmin=None, vmax=None, verify_trafo=True)

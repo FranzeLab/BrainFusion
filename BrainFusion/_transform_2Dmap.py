@@ -1,17 +1,22 @@
 import numpy as np
 from scipy.interpolate import Rbf
+from tqdm import tqdm
 
 
-def transform_grid2contour(original_contour, deformed_contour, original_grid):
+def transform_grid2contour(original_contour, deformed_contour, original_grid, progress=''):
     # Create RBF interpolators
     rbf_x, rbf_y = create_rbf_interpolators(original_contour=original_contour,
                                             deformed_contour=deformed_contour)
 
     # Transform original contour to the coordinate system of the deformed contour
-    trafo_contour = np.array([[rbf_x(x, y), rbf_y(x, y)] for x, y in original_contour])
+    trafo_contour = np.array([
+        [rbf_x(x, y), rbf_y(x, y)] for x, y in tqdm(original_contour, desc="Transforming contour" + progress)
+    ])
 
     # Transform original grid to the coordinate system defined by the average contour
-    trafo_grid = np.array([[rbf_x(x, y), rbf_y(x, y)] for x, y in original_grid])
+    trafo_grid = np.array([
+        [rbf_x(x, y), rbf_y(x, y)] for x, y in tqdm(original_grid, desc="Transforming grid" + progress)
+    ])
 
     return trafo_grid, trafo_contour
 
