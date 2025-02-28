@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from scipy.interpolate import interp1d
+import scipy.ndimage as ndi
 from scipy.spatial.distance import directed_hausdorff
 from frechetdist import frdist
 from shapely.geometry import Polygon, Point, LineString
@@ -22,73 +23,70 @@ def interpolate_contour(contour, num_points):
 
 
 def align_contours(contour_list, grid_list, template_index, fit_routine='ellipse'):
-    # Circularly shift contours to match template and transform all contours to their geometric centre
-    modified_contours, centres = circularly_shift_contours(contour_list, template_index)
+    # Translate contours to their geometric centres
+    centres = [np.mean(contour, axis=0) for contour in contour_list]
+    centred_contours = [contour - centre for contour, centre in zip(contour_list, centres)]
+    centred_grids = [grid - centre for grid, centre in zip(grid_list, centres)]
 
-    # Apply translations to grids
-    modified_grids = [grid - centre for grid, centre in zip(grid_list, centres)]
+    # Circularly shift contours to match template
+    shifted_contours = circularly_shift_contours(centred_contours, template_index)
 
     #  Match contours using fitting routine
-    matched_contours, matched_grids = match_contours(modified_contours,
-                                                     modified_grids,
-                                                     modified_contours[template_index],
+    matched_contours, matched_grids = match_contours(shifted_contours,
+                                                     centred_grids,
+                                                     shifted_contours[template_index],
                                                      fit_routine)
 
     return matched_contours, matched_grids
 
 
-def align_sc_contours(contour_list, grid_list, init_points=None, template_index=0):
-    # Circularly shift contours to match template and transform all contours to their geometric centre
-    shifted_contours, _ = circularly_shift_contours(contour_list,
-                                                    template_index=template_index,
-                                                    centre_contours=False,
-                                                    init_points=init_points)
+def align_sc_contours(contour_list, grid_list, rot_axes=None, init_points=None, template_index=0):
+    # Circularly shift contours to match template index
+    shifted_contours = circularly_shift_contours(contour_list,
+                                                 template_index=template_index,
+                                                 centre_contours=False,
+                                                 init_points=init_points)
 
-    #  Match contours using bbox fitting routine and DTW alignment
+    # Match contours using bbox fitting routine and DTW alignment
     matched_contours = []
-    dtw_contours = []
     matched_grids = []
     for i, contour in enumerate(shifted_contours):
-        contour_trafo, template_trafo = match_contour_with_bbox(contour, shifted_contours[template_index])
+        ang = angle_between_lines(rot_axes[i], rot_axes[template_index]) if rot_axes is not None else None
+
+        # Find rigid affine transformations
+        contour_trafo, _ = match_contour_with_bbox(contour, shifted_contours[template_index], rot_ang=ang)
+
+        # Apply transformations to contours and grids
         matched_contour = contour_trafo(contour)
-        matched_grid = contour_trafo(grid_list[i])
+        matched_grid = contour_trafo(grid_list[i]) if grid_list[i] is not None else None  # ToDo: Remove if statement once AFM grid data is included
+
+        # Store transformed arrays
         matched_contours.append(matched_contour)
         matched_grids.append(matched_grid)
 
-    for i, contour in enumerate(matched_contours):
-        contour_dtw, _ = dtw_with_tangent_penalty(contour, matched_contours[template_index])
-        dtw_contours.append(contour_dtw)
+    # Boundary matching using dynamic time warping with tangent penalty
+    dtw_contours, dtw_tmp_contours = [], []
 
-    return dtw_contours, matched_grids
+    for i, contour in enumerate(matched_contours):
+        contour_dtw, contour_template_dtw = dtw_with_curvature_penalty(contour, matched_contours[template_index])
+        dtw_contours.append(contour_dtw)
+        dtw_tmp_contours.append(contour_template_dtw)
+
+    return dtw_contours, dtw_tmp_contours, matched_grids
 
 
 def circularly_shift_contours(contours, template_index=0, centre_contours=True, init_points=None):
     assert 0 <= template_index < len(contours), print("Contour template index out of range!")
     assert not (init_points is not None and centre_contours is True), (
-        'Attention: Centering contours while using predefined'
-        ' shift coordinates!')
+        'Attention: Centering contours while using predefined shift coordinates!')
 
     template_contour = contours[template_index]
-    template_centre = np.mean(template_contour, axis=0)
-    if centre_contours:
-        template_contour = template_contour - template_centre
     modified_contours = []
-    centres = []
 
     # Get topological orientation of template contour
     orientation = get_contour_orientation(template_contour)
 
     for i, contour in enumerate(contours):
-        #if i == template_index:
-        #    modified_contours.append(template_contour)
-        #    centres.append(template_centre)
-        #    continue
-
-        # Centre contours around geometric mean
-        contour_centre = np.mean(contour, axis=0)
-        if centre_contours:
-            contour = contour - contour_centre
-
         if init_points is not None:
             # Find the closest initial point in init_points
             distances_to_init_points = np.linalg.norm(contour - init_points[i], axis=1)
@@ -111,9 +109,8 @@ def circularly_shift_contours(contours, template_index=0, centre_contours=True, 
         shifted_contour[-1, :] = shifted_contour[0, :]
 
         modified_contours.append(shifted_contour)
-        centres.append(contour_centre)
 
-    return modified_contours, centres
+    return modified_contours
 
 
 def get_contour_orientation(contour):
@@ -140,24 +137,24 @@ def match_contours(contours, grids, template_contour, fit_routine='ellipse'):
     return matched_contours, matched_grids
 
 
-def match_contour_with_ellipse(A, B, grid):
-    ellipse_A = fit_ellipse(A)
-    ellipse_B = fit_ellipse(B)
-    if ellipse_A is None or ellipse_B is None:
+def match_contour_with_ellipse(a, b, grid):
+    ellipse_a = fit_ellipse(a)
+    ellipse_b = fit_ellipse(b)
+    if ellipse_a is None or ellipse_b is None:
         print("No ellipse could be fitted to the contours! Continue with original shapes.")
-        return A, None, None, None  # Return original if ellipse can't be fitted
-    center_A = np.array(ellipse_A[0])  # Important: Ellipse fit centre does not always align with geometric mean!
-    center_B = np.array(ellipse_B[0])
-    rotation_angle = ellipse_B[2] - ellipse_A[2]  # Angle difference
+        return a, None, None, None  # Return original if ellipse can't be fitted
+    center_a = np.array(ellipse_a[0])  # Important: Ellipse fit centre does not always align with geometric mean!
+    center_b = np.array(ellipse_b[0])
+    rotation_angle = ellipse_b[2] - ellipse_a[2]  # Angle difference
     if rotation_angle > 90:
         rotation_angle = rotation_angle - 180
     elif rotation_angle < -90:
         rotation_angle = rotation_angle + 180
     rotation_angle = np.deg2rad(rotation_angle)
-    A_rotated = rotate_coordinate_system(A, rotation_angle, center_A)
-    grid_rotated = rotate_coordinate_system(grid, rotation_angle, center_A)
+    a_rotated = rotate_coordinate_system(a, rotation_angle, center_a)
+    grid_rotated = rotate_coordinate_system(grid, rotation_angle, center_a)
 
-    return A_rotated, grid_rotated, rotation_angle, center_A, center_B
+    return a_rotated, grid_rotated, rotation_angle, center_a, center_b
 
 
 def fit_ellipse(contour):
@@ -167,12 +164,13 @@ def fit_ellipse(contour):
 
 
 def rotate_coordinate_system(contour, angle, center):
-    R = np.array([[np.cos(angle), -np.sin(angle)],
-                  [np.sin(angle), np.cos(angle)]])
-    return (contour - center).dot(R.T) + center
+    r_matrix = np.array([[np.cos(angle), -np.sin(angle)],
+                         [np.sin(angle), np.cos(angle)]])
+    return (contour - center).dot(r_matrix.T) + center
 
 
-def match_contour_with_bbox(a, b):
+def match_contour_with_bbox(a, b, rot_ang=None):
+    """Find affine transformation to match two rigid contours."""
     # Translate contours to their geometric centre
     centre_a = -np.mean(a, axis=0)
     a_cent = a + centre_a
@@ -183,7 +181,7 @@ def match_contour_with_bbox(a, b):
     source_points = extract_bbox_corners(a_cent)
     target_points = extract_bbox_corners(b_cent)
 
-    # Scale in x and y
+    # Scale in x and y using the corner boundary box corner points
     dist_x_target = (target_points[3] - target_points[0])[0]
     dist_x_source = (source_points[3] - source_points[0])[0]
     scale_x = dist_x_target / dist_x_source if dist_x_source != 0 else 1
@@ -192,16 +190,12 @@ def match_contour_with_bbox(a, b):
     dist_y_source = (source_points[1] - source_points[0])[1]
     scale_y = dist_y_target / dist_y_source if dist_y_source != 0 else 1
 
-    rot_ang = regression_alignment_angle(a_cent, b_cent)
-
-    # Translate contours to match their first coordinates
-    translate_a = [0, 0]  # b_cent[0, :] - a_cent[0, :]
+    ang = regression_alignment_angle(a_cent[:, 0], b_cent) if rot_ang is None else rot_ang
 
     # Define Transformation matrix for a and b
     affine_transformation_a = (AffineTransform(translation=(centre_a[0], centre_a[1])) +
-                               AffineTransform(scale=(scale_x, scale_y)) +
-                               AffineTransform(rotation=rot_ang) +
-                               AffineTransform(translation=(translate_a[0], translate_a[1]))
+                               AffineTransform(rotation=ang) +
+                               AffineTransform(scale=(scale_x, scale_y))
                                )
     affine_transformation_b = AffineTransform(translation=(centre_b[0], centre_b[1]))
 
@@ -215,6 +209,26 @@ def extract_bbox_corners(contour):
     return np.array([[x_min, y_min], [x_min, y_max], [x_max, y_max], [x_max, y_min]])
 
 
+def angle_between_lines(source_axis, target_axis):
+    """Calculate the signed angle between two lines (in radians)."""
+    # Compute direction vectors
+    v1 = source_axis[1] - source_axis[0]  # Vector of first line
+    v2 = target_axis[1] - target_axis[0]  # Vector of second line
+
+    # Compute angle using dot product (magnitude)
+    dot_product = np.dot(v1, v2)
+    norm = np.linalg.norm(v1) * np.linalg.norm(v2)
+    cos_theta = dot_product / norm if norm != 0 else 1
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    angle = np.arccos(cos_theta)  # Always 0 to π
+
+    # Compute the sign using the 2D cross product
+    cross_product = np.cross(v1, v2)  # Scalar value in 2D
+    signed_angle = np.sign(cross_product) * angle  # Apply sign
+
+    return signed_angle
+
+
 def regression_alignment_angle(source_contour, target_contour):
     """Fit a line to the right side of the contours and compute rotation."""
     right_source = source_contour[source_contour[:, 0] > np.percentile(source_contour[:, 0], 98)]
@@ -222,41 +236,67 @@ def regression_alignment_angle(source_contour, target_contour):
     slope_source, _, _, _, _ = linregress(right_source[:, 0], right_source[:, 1])
     slope_target, _, _, _, _ = linregress(right_target[:, 0], right_target[:, 1])
     angle = np.arctan(slope_target) - np.arctan(slope_source)
+
     # Adjust angle to wrap around within the range of ±π/2
     if angle > np.pi / 2:
         angle -= np.pi
     elif angle < -np.pi / 2:
         angle += np.pi
 
-    return 0  #angle
+    return angle
 
 
-def dtw_with_tangent_penalty(contour1, contour2, base_lambda_tangent=0.4):
-    """Match contours using DTW with a dynamically normalized tangent similarity constraint."""
+def dtw_with_curvature_penalty(contour1, contour2, base_lambda_curvature=0.5, alpha=0.05):
+    """Match contours using DTW with a curvature scale-space (CSS) constraint and normalized sigma."""
+
+    def compute_contour_length(contour):
+        """Compute total contour length as sum of segment distances."""
+        return np.sum(np.linalg.norm(np.diff(contour, axis=0), axis=1))
+
+    def gaussian_smooth_contour(contour, sigma):
+        """Smooth contour using Gaussian filter."""
+        smoothed_x = ndi.gaussian_filter1d(contour[:, 0], sigma, mode='wrap')
+        smoothed_y = ndi.gaussian_filter1d(contour[:, 1], sigma, mode='wrap')
+        return np.column_stack((smoothed_x, smoothed_y))
+
+    def compute_css_curvature(contour, sigma):
+        """Compute curvature at a given scale using smoothed contours."""
+        smoothed_contour = gaussian_smooth_contour(contour, sigma)
+
+        dx = np.gradient(smoothed_contour[:, 0])
+        dy = np.gradient(smoothed_contour[:, 1])
+        ddx = np.gradient(dx)
+        ddy = np.gradient(dy)
+
+        curvature = (dx * ddy - dy * ddx) / (dx ** 2 + dy ** 2 + 1e-10) ** (3 / 2)
+        return curvature
+
+    # Compute normalized sigma based on contour length
+    len1, len2 = compute_contour_length(contour1), compute_contour_length(contour2)
+    sigma1 = alpha * (len1 / len(contour1))
+    sigma2 = alpha * (len2 / len(contour2))
+
     n, m = len(contour1), len(contour2)
 
-    # Compute local tangent vectors
-    tangents1 = np.diff(contour1, axis=0, append=contour1[:1])
-    tangents2 = np.diff(contour2, axis=0, append=contour2[:1])
+    # Compute curvature at adaptive scales
+    curvatures1 = compute_css_curvature(contour1, sigma1)
+    curvatures2 = compute_css_curvature(contour2, sigma2)
 
-    # Normalize lambda_tangent dynamically
+    # Normalize lambda_curvature dynamically
     spatial_dists = [np.linalg.norm(contour1[i] - contour2[j]) for i in range(n) for j in range(m)]
-    tangent_diffs = [1 - np.dot(tangents1[i], tangents2[j]) / (np.linalg.norm(tangents1[i]) * np.linalg.norm(tangents2[j]) + 1e-10)
-                     for i in range(n) for j in range(m)]
+    curvature_diffs = [np.abs(curvatures1[i] - curvatures2[j]) for i in range(n) for j in range(m)]
 
     median_spatial = np.median(spatial_dists)
-    median_tangent = np.median(tangent_diffs)
+    median_curvature = np.median(curvature_diffs)
 
-    lambda_tangent = base_lambda_tangent * (median_spatial / (median_tangent + 1e-10))
+    lambda_curvature = base_lambda_curvature * (median_spatial / (median_curvature + 1e-10))
 
     def cost_function(i, j):
-        """Cost function incorporating spatial distance and normalized tangent similarity."""
+        """Cost function incorporating spatial distance and CSS-based curvature penalty."""
         p1, p2 = contour1[i], contour2[j]
-        t1, t2 = tangents1[i], tangents2[j]
-
         spatial_dist = np.linalg.norm(p1 - p2)
-        tangent_penalty = lambda_tangent * (1 - np.dot(t1, t2) / (np.linalg.norm(t1) * np.linalg.norm(t2) + 1e-10))
-        return spatial_dist + tangent_penalty
+        curvature_penalty = lambda_curvature * np.abs(curvatures1[i] - curvatures2[j])
+        return spatial_dist ** 2 + curvature_penalty
 
     # Initialize DP matrix
     dtw_matrix = np.full((n + 1, m + 1), np.inf)
@@ -398,19 +438,19 @@ def calculate_distances(contours, master_contour, metric='jaccard'):
         if metric == 'jaccard':
             def jaccard_distance(curve_a, curve_b):
                 # Create Polygon objects
-                polya = Polygon(curve_a)
-                polyb = Polygon(curve_b)
+                poly_a = Polygon(curve_a)
+                poly_b = Polygon(curve_b)
 
                 # Calculate the intersection and union of the polygons
-                intersection_area = polya.intersection(polyb).area
-                union_area = polya.union(polyb).area
+                intersection_area = poly_a.intersection(poly_b).area
+                union_area = poly_a.union(poly_b).area
 
                 # Calculate the Jaccard Index based on areas
                 jaccard_index = intersection_area / union_area
 
                 # Calculate the Jaccard Distance
-                jaccard_distance = 1 - jaccard_index
-                return jaccard_distance
+                jaccard_dist = 1 - jaccard_index
+                return jaccard_dist
 
             dist = jaccard_distance(contour, master_contour)
 

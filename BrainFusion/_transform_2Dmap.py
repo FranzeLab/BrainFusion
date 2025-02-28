@@ -8,12 +8,12 @@ def transform_grid2contour(original_contour, deformed_contour, original_grid, pr
     rbf_x, rbf_y = create_rbf_interpolators(original_contour=original_contour,
                                             deformed_contour=deformed_contour)
 
-    # Transform original contour to the coordinate system of the deformed contour
+    # Apply transformation to original contour to check whether deformation works as expected
     trafo_contour = np.array([
-        [rbf_x(x, y), rbf_y(x, y)] for x, y in tqdm(original_contour, desc="Transforming contour" + progress)
+        [rbf_x(x, y), rbf_y(x, y)] for x, y in original_contour
     ])
 
-    # Transform original grid to the coordinate system defined by the average contour
+    # Deform original grid to coordinate system of deformed contour
     trafo_grid = np.array([
         [rbf_x(x, y), rbf_y(x, y)] for x, y in tqdm(original_grid, desc="Transforming grid" + progress)
     ])
@@ -22,12 +22,12 @@ def transform_grid2contour(original_contour, deformed_contour, original_grid, pr
 
 
 # ToDo: Implement new interpolation function scipy.interpolate.RBFInterpolator
-def create_rbf_interpolators(original_contour, deformed_contour):
+def create_rbf_interpolators(original_contour, deformed_contour, function='thin_plate', smooth=0.2):
     x_orig, y_orig = original_contour[:, 0], original_contour[:, 1]
     x_deform, y_deform = deformed_contour[:, 0], deformed_contour[:, 1]
 
-    rbf_x = Rbf(x_orig, y_orig, x_deform, function='linear', smooth=0.2)
-    rbf_y = Rbf(x_orig, y_orig, y_deform, function='linear', smooth=0.2)
+    rbf_x = Rbf(x_orig, y_orig, x_deform, function=function, smooth=smooth)
+    rbf_y = Rbf(x_orig, y_orig, y_deform, function=function, smooth=smooth)
 
     return rbf_x, rbf_y
 

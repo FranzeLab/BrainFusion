@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.mixture import GaussianMixture
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
-from ._find_average_contour import align_contours
+from ._match_contours import align_contours
 from ._transform_2Dmap import transform_grid2contour
 from ._plot_maps import plot_contours, plot_corr_maps
 from scipy.stats import pearsonr

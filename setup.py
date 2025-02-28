@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='BrainFusion',
-    version='0.1.2',
+    version='0.1.3',
     packages=find_packages(),
     install_requires=[  # Used for distributing package; requirements.txt for setting up virtual env for developing
         'h5py >= 3.11.0',

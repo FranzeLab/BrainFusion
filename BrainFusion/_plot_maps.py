@@ -91,24 +91,26 @@ def plot_experiments(analysis_file, results_folder, raw_data_key, average='inter
 
 def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', marker_size=20,
                         vmin=None, vmax=None, verify_trafo=False, **kwargs):
-    avg_data = analysis_file['interpolated_data']
-    avg_grid = analysis_file['interpolated_grid']
+    print(f'Plotting spinal cord data: {os.path.basename(os.path.dirname(results_folder))}.')
+    os.makedirs(results_folder, exist_ok=True)
+
+    avg_data = analysis_file['myelin_interpolated_dataset']
+    avg_grid = analysis_file['myelin_interpolated_grid']
+    afm_contours = analysis_file['afm_contours']
 
     # Plot original maps on background images and plot original/transformed maps next to each other
-    matched_contours = []
-    for index, c in enumerate(analysis_file['raw_data']):
+    for index, c in enumerate(analysis_file['myelin_datasets']):
         if type(c) is str:
             index = c
         # Extract arrays
-        avg_contour = analysis_file['trafo_contour'][index]
-        matched_contour = analysis_file['matched_contour'][index]
-        raw_data = analysis_file['raw_data'][index]
-        matched_grid = analysis_file['matched_grid'][index]
-        trafo_grid = analysis_file['trafo_grid'][index]
+        matched_contour = analysis_file['myelin_contours'][index]
+        raw_data = analysis_file['myelin_datasets'][index]
+        matched_grid = analysis_file['myelin_grids'][index]
+        trafo_grid = analysis_file['myelin_trafo_grids'][index]
 
         if verify_trafo:
             cmap = 'viridis'
-            num_points_per_axis = 15
+            num_points_per_axis = 50
 
             # Get min and max x, y coordinates
             min_x, min_y = np.min(matched_grid, axis=0) - [100, 100]
@@ -125,11 +127,11 @@ def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', ma
             # Randomly sample values from the discrete list for each grid point
             raw_data = np.random.choice(np.linspace(1, 10, 10), size=matched_grid.shape[0])
 
-            trafo_grid, _ = transform_grid2contour(matched_contour, avg_contour, matched_grid)
+            trafo_grid, _ = transform_grid2contour(matched_contour, afm_contours[index], matched_grid)
 
         # Plot original and transformed data grids
         fig = plot_trafo_map(matched_contour,
-                             avg_contour,
+                             afm_contours[index],
                              raw_data,
                              matched_grid,
                              trafo_grid,
@@ -139,22 +141,21 @@ def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', ma
                              vmin=vmin,
                              vmax=vmax,
                              mask=True)
-        output_path = os.path.join(results_folder, f'Transformed_Section_{index}.png')
+        output_path = os.path.join(results_folder, f'Transformed_{analysis_file['myelin_filenames'][index]}.png')
         fig.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
 
-        # Save matched contour
-        matched_contours.append(analysis_file['matched_contour'][index])
-
     # Plot all original contours and the averaged contour
-    fig = plot_contours(avg_contour, matched_contours)
-    output_path = os.path.join(results_folder, 'matched_mask_contours.png')
+    cont = analysis_file['myelin_contours']
+    iterator = list(cont.values()) if type(cont) is dict else cont
+    fig = plot_contours(afm_contours[0], iterator)
+    output_path = os.path.join(results_folder, 'matched_contours.png')
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
 
     fig = plot_average_map2(avg_data,
                             avg_grid,
-                            avg_contour,
+                            afm_contours[0],
                             label=label,
                             cmap=cmap,
                             marker_size=marker_size,
@@ -242,48 +243,21 @@ def plot_map_on_image(img, data, grid, contour, folder_name, scale=1, label='', 
 def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap='viridis', marker_size=30,
                    vmin=None, vmax=None, mask=False):
     # Create subplots with two side-by-side plots
-    fig, axes = plt.subplots(1, 3, figsize=(15, 7))
+    fig, axes = plt.subplots(1, 3, figsize=(25, 7))
 
-    # Plot the original contours
-    arc_length = calculate_arc_length(contour)
-    norm = Normalize(vmin=arc_length.min(), vmax=arc_length.max())  # Normalize the arc length
+    axes[0].plot(contour[:, 0], contour[:, 1], c='grey', linestyle='-')
+    axes[0].scatter(contour[:, 0], contour[:, 1], c='k', s=5)
+    axes[0].plot(avg_contour[:, 0], avg_contour[:, 1], 'blue', linestyle='-')
+    axes[0].scatter(avg_contour[:, 0], avg_contour[:, 1], c='b', s=5)
 
-    # Select every 10th point for the rainbow effect
-    step = int(len(contour) / 100)
-    selected_indices = np.arange(0, len(contour), step)
+    axes[0].quiver(contour[:, 0], contour[:, 1],
+               avg_contour[:, 0] - contour[:, 0], avg_contour[:, 1] - contour[:, 1],
+               angles='xy', scale_units='xy', scale=1, color='r', alpha=0.8, zorder=3)
 
-    # Apply scatter for only the selected points (every 10th point)
-    axes[0].scatter(contour[selected_indices, 0], contour[selected_indices, 1], c=arc_length[selected_indices],
-                    cmap='bwr', s=marker_size, norm=norm)
-
-    arc_length = calculate_arc_length(avg_contour)
-    norm = Normalize(vmin=arc_length.min(), vmax=arc_length.max())  # Normalize the arc length
-
-    # Select every 10th point for the rainbow effect
-    step = int(len(avg_contour) / 100)
-    selected_indices = np.arange(0, len(avg_contour), step)
-
-    # Apply scatter for only the selected points (every 10th point)
-    axes[0].scatter(avg_contour[selected_indices, 0], avg_contour[selected_indices, 1], c=arc_length[selected_indices],
-                    cmap='bwr', s=marker_size, norm=norm)
-
-    axes[0].set_title('Arc length matching', fontsize=20)
-
-    for i in selected_indices:
-        # Calculate vector components (difference between corresponding points)
-        dx = avg_contour[i, 0] - contour[i, 0]
-        dy = avg_contour[i, 1] - contour[i, 1]
-
-        # Calculate the Euclidean distance (magnitude of the vector)
-        distance = np.sqrt(dx ** 2 + dy ** 2)
-
-        # Normalize the vector to unit length
-        dx_normalized = dx / distance if distance != 0 else 0
-        dy_normalized = dy / distance if distance != 0 else 0
-
-        # Use the distance to scale the vector to the correct length
-        axes[0].quiver(contour[i, 0], contour[i, 1], dx_normalized * distance, dy_normalized * distance,
-                       angles='xy', scale_units='xy', scale=1, color='k', width=0.005)
+    axes[0].set_title('DTW with Curvature Penalty', fontsize=20)
+    axes[0].axis('equal')
+    axes[0].set_xticks([])
+    axes[0].set_yticks([])
 
     axes[1].plot(contour[:, 0], contour[:, 1], color='grey', linestyle='-', linewidth=3,
                  label='Original Contour')
@@ -291,8 +265,8 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
     # Original grid
     if mask:
         mask_1 = mask_contour(contour, grid)
-        #mask_tmp = (trafo_grid >= 0).all(axis=1)
-        #mask_1 = mask_1 & mask_tmp
+        mask_tmp = data >= 0
+        mask_1 = mask_1 & mask_tmp
     else:
         mask_1 = np.full(grid.shape[1], True)
 
@@ -304,10 +278,12 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
                     vmin=vmin,
                     vmax=vmax)
 
-    axes[1].legend()
-    axes[1].set_title('Original data map', fontsize=20)
+    #axes[1].legend()
+    axes[1].set_title('Original Data Map', fontsize=20)
     #axes[1].grid()
     axes[1].axis('equal')
+    axes[1].set_xticks([])
+    axes[1].set_yticks([])
 
     # Plot the transformed contours
     #axes[2].plot(contour[:, 0], contour[:, 1], color='grey', linestyle='-', linewidth=3,
@@ -318,8 +294,8 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
     # Transformed grid
     if mask:
         mask_2 = mask_contour(avg_contour, trafo_grid)
-        #mask_tmp = (trafo_grid >= 0).all(axis=1)
-        #mask_2 = mask_2 & mask_tmp
+        mask_tmp = data >= 0
+        mask_2 = mask_2 & mask_tmp
     else:
         mask_2 = np.full(trafo_grid.shape[0], True)
 
@@ -331,10 +307,12 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
                               vmin=vmin,
                               vmax=vmax)
 
-    axes[2].legend(loc=1)
-    axes[2].set_title('Transformed data map', fontsize=20)
+    #axes[2].legend(loc=1)
+    axes[2].set_title('Transformed Data Map', fontsize=20)
     #axes[2].grid()
     axes[2].axis('equal')
+    axes[2].set_xticks([])
+    axes[2].set_yticks([])
 
     # Set axis limits to be the same for both plots
     axes[0].set_xlim(axes[1].get_xlim())

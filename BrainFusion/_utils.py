@@ -2,7 +2,40 @@ import numpy as np
 import os
 import matplotlib.path as mpath
 import h5py
-from scipy.spatial.distance import pdist
+import pandas as pd
+
+
+def read_parquet_file(path, image=False):
+    """
+    Reads in parquet files either as images in matrix format or as a Nx2 list of coordinates with the respective N values.
+    """
+    df = pd.read_parquet(path, engine='pyarrow')
+    if image:
+        df = df.sort_values(by=["y", "x"])
+        img = df.pivot(index="y", columns="x", values="value_orig")
+        return img
+    else:
+        grid = df[['x', 'y']].to_numpy()
+        data = df[['value_background_corrected']].to_numpy().ravel()
+        return grid, data
+
+
+def append_parquet_file(path, brainfusion_analysis):
+    """
+    Write brainfusion analysis file to parquet file.
+    """
+    parquet_file_names = [filename + '_Merged_RAW_ch02_image_roi_linearised.parquet'
+                          for filename in brainfusion_analysis['myelin_filenames']]
+    for idx, file_name in enumerate(parquet_file_names):
+        parquet_file_path = os.path.join(path, file_name)
+        df = pd.read_parquet(parquet_file_path, engine='pyarrow')
+        trafo_grid = brainfusion_analysis['myelin_trafo_grids'][idx]
+
+        # ToDo: Remove for writing proper data
+        trafo_grid = np.zeros((len(df), 2))
+
+        df['x_translated'], df['y_translated'] = trafo_grid[:, 0], trafo_grid[:, 1]
+        df.to_parquet(parquet_file_path.removesuffix(".parquet") + '_Trafo' + '.parquet', index=False, engine='pyarrow')
 
 
 def get_roi_from_txt(roi_path, delimiter='\t'):
@@ -168,6 +201,7 @@ def read_dict_from_h5(h5file, group_path='/'):
 
 
 def import_analysis(path):
+    print(f'Importing analysis file from: {os.path.basename(path)}.')
     with h5py.File(path, 'r') as h5file:
         # Load the analysis (stored in groups/datasets)
         analysis = read_dict_from_h5(h5file, '/')
