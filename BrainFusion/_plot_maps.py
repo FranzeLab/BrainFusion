@@ -1,13 +1,12 @@
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib.colors import Normalize
 import numpy as np
 import os
-from ._utils import mask_contour
-from ._transform_2Dmap import transform_grid2contour
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from scipy.optimize import curve_fit
 from scipy.stats import f
 
+from brainfusion._utils import mask_contour
+from brainfusion._transform_2Dmap import transform_grid2contour
 plt.rcParams['svg.fonttype'] = 'none'
 
 

@@ -1,4 +1,5 @@
-from BrainFusion import *
+import os
+from brainfusion import *
 from params import afm_params
 
 # This script was made to explore the BrainFusion Python package using AFM stiffness maps of spinal cord tissue and image

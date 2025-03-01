@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='BrainFusion',
+    name='brainfusion',
     version='0.1.3',
     packages=find_packages(),
     install_requires=[  # Used for distributing package; requirements.txt for setting up virtual env for developing
@@ -11,9 +11,12 @@ setup(
         'opencv_python >= 4.10.0.84',
         'pandas >= 2.2.3',
         'Pillow >= 10.4.0',
-        'scikit_learn >= 1.4.2',
+        'scikit_learn >= 1.5.2',
         'scipy >= 1.14.1',
-        'scikit-image>=0.23'
+        'scikit-image>=0.23',
+        'shapely >=2.0.6'
+        'frechetdist >= 0.6'
+        'tqdm ~= 4.67.1'
     ],
     author='Niklas Gampl',
     author_email='niklas.gampl@mpzpm.mpg.de',

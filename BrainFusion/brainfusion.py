@@ -1,11 +1,12 @@
 import os
 import numpy as np
 from scipy.interpolate import griddata
-from ._match_contours import (interpolate_contour, align_contours, find_average_contour, circularly_shift_contours,
-                              align_sc_contours)
-from ._transform_2Dmap import extend_grid, transform_grid2contour
-from ._gmm_correlation import fit_coordinates_gmm
-from .load_experiments.load_afm import load_sc_afm_myelin
+
+from brainfusion._match_contours import (interpolate_contour, align_contours, find_average_contour,
+                                         circularly_shift_contours, align_sc_contours)
+from brainfusion._transform_2Dmap import extend_grid, transform_grid2contour
+from brainfusion._gmm_correlation import fit_coordinates_gmm
+from brainfusion.load_experiments.load_afm import load_sc_afm_myelin
 
 
 def process_multiple_experiments(load_experiment_func, base_folder, results_folder, **kwargs):

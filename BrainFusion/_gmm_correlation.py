@@ -2,13 +2,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.mixture import GaussianMixture
+from sklearn.preprocessing import MinMaxScaler
 from scipy.interpolate import griddata
 from scipy.spatial import cKDTree
-from ._match_contours import align_contours
-from ._transform_2Dmap import transform_grid2contour
-from ._plot_maps import plot_contours, plot_corr_maps
 from scipy.stats import pearsonr
-from sklearn.preprocessing import MinMaxScaler
+
+from brainfusion._match_contours import align_contours
+from brainfusion._transform_2Dmap import transform_grid2contour
+from brainfusion._plot_maps import plot_contours, plot_corr_maps
 
 
 def fit_coordinates_gmm(grids, data_list, trafo_data=None, same_maps=True, num_components='mean'):
