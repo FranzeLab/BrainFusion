@@ -11,15 +11,22 @@ Python package for transforming measurement grids (AFM, Brillouin, in situ HCR, 
 5. [License](#license)
 
 ## Installation
-1. Clone the repository:
+1. Clone the Repository:
    ```bash
    cd <repository-directory>
    git clone https://github.com/nik-liegroup/BrainFusion
    ```
-
-2. Install required packages:
+   
+2. Create Virtual Conda Environment and Activate
+   ```bash
+   conda create --name brainfusion-env python=3.12
+   conda activate brainfusion-env
+   ```
+   
+3. Install Brainfusion Package with Dependencies:
     ```bash
-   pip install -r requirements.txt
+   cd <repository-directory>\BrainFusion
+   pip install .
    ```
 
 ## Usage
