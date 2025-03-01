@@ -7,17 +7,6 @@
     <list default="true" id="820121ef-d84e-4cb5-9d5e-ff556abbb7f2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_find_average_contour.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_match_contours.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_gmm_correlation.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_gmm_correlation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_plot_maps.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_plot_maps.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_transform_2Dmap.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_transform_2Dmap.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/brainfusion.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/brainfusion.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_2_JB_SpinalCord/data/JB_SpinalCordSection_#50/data.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_2_JB_SpinalCord/example_script_2.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_2_JB_SpinalCord/example_script_2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/examples/Example_2_JB_SpinalCord/params.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/examples/Example_2_JB_SpinalCord/params.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BrainFusion/load_experiments/load_afm.py" beforeDir="false" afterPath="$PROJECT_DIR$/BrainFusion/load_experiments/load_afm.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -252,7 +241,9 @@
       <workItem from="1740765579883" duration="1230000" />
       <workItem from="1740766892011" duration="4699000" />
       <workItem from="1740771643313" duration="3927000" />
-      <workItem from="1740775609795" duration="3594000" />
+      <workItem from="1740775609795" duration="3803000" />
+      <workItem from="1740779716327" duration="594000" />
+      <workItem from="1740815301155" duration="608000" />
     </task>
     <servers />
   </component>
@@ -324,7 +315,7 @@
     <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$exposed_brain_brillouin_analysis.coverage" NAME="exposed_brain_brillouin_analysis Coverage Results" MODIFIED="1726434500854" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/spectroscopy_postprocessing_py$tsts.coverage" NAME="tsts Coverage Results" MODIFIED="1727113646460" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
     <SUITE FILE_PATH="coverage/exposed_brain_brillouin_analysis_py$tsts.coverage" NAME="tsts Coverage Results" MODIFIED="1726248954343" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/example_script_2_py$example_script_2.coverage" NAME="example_script_2 Coverage Results" MODIFIED="1740779199324" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples/Example_2_JB_SpinalCord" />
+    <SUITE FILE_PATH="coverage/example_script_2_py$example_script_2.coverage" NAME="example_script_2 Coverage Results" MODIFIED="1740779294915" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/BrainFusion/examples/Example_2_JB_SpinalCord" />
     <SUITE FILE_PATH="coverage/tsts_py$exposed_brain_brillouin_analysis.coverage" NAME="exposed_brain_brillouin_analysis Coverage Results" MODIFIED="1726311164689" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/avg_tst_py$avg_tst.coverage" NAME="avg_tst Coverage Results" MODIFIED="1726859628004" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/spectroscopy_postprocessing" />
     <SUITE FILE_PATH="coverage/tst_C_py$tst_C.coverage" NAME="tst_C Coverage Results" MODIFIED="1726397997935" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

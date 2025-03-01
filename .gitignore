@@ -1,7 +1,7 @@
-# Additional
+# Directories
 building/*
 */prelim_code/
-*/correlation/
+*/Example_1_BrainTissueStiffnessAndFluidity/data
 */Example_2_JB_SpinalCord/data/
 */.idea/
 .bash_history/
@@ -14,7 +14,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+# File extensions
 *.so
 *.h5
 *.parquet
