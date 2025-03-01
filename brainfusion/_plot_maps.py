@@ -311,12 +311,6 @@ def plot_trafo_map(contour, avg_contour, data, grid, trafo_grid, label='', cmap=
     axes[2].set_xticks([])
     axes[2].set_yticks([])
 
-    # Set axis limits to be the same for both plots
-    axes[0].set_xlim(axes[1].get_xlim())
-    axes[0].set_ylim(axes[1].get_ylim())
-    axes[2].set_xlim(axes[1].get_xlim())
-    axes[2].set_ylim(axes[1].get_ylim())
-
     # Plot colorbar
     cbar = fig.colorbar(heatmap, ax=axes[2])
     cbar.ax.tick_params(labelsize=20)
