@@ -17,9 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         conda env create --file environment.yml
-        conda init bash  # Initialize Conda in the GitHub Actions runner
-        source ~/.bashrc  # Reload shell to apply Conda changes
-        conda activate brainfusion-env
+        source activate brainfusion-env
         pip install .
     - name: Lint with flake8
       run: |
