@@ -146,7 +146,7 @@ def process_sc_experiment(path, boundary_filename, key_point_filename, rot_axis_
         trafo_grid, trafo_contour = transform_grid2contour(myelin_contours[index],
                                                            afm_contours[index],
                                                            myelin_grids[index],
-                                                           progress=f' {index + 1} out of {len(matched_contours) + 1}')
+                                                           progress=f' {index + 1} out of {len(matched_contours) - 1}')
 
         # Interpolate maps from deformed grids to common regular grid
         trafo_data = griddata(myelin_grids[index], myelin_datasets[index].ravel(), extended_grid, method='nearest')

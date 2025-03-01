@@ -195,7 +195,18 @@ def read_dict_from_h5(h5file, group_path='/'):
         if isinstance(item, h5py.Group):
             result[key] = read_dict_from_h5(h5file, f"{group_path}/{key}")
         else:
-            result[key] = item[()]  # Reads dataset values
+            data = item[()]  # Read dataset normally
+
+            # Convert 'myelin_filenames' to list
+            if key == 'myelin_filenames' and isinstance(data, np.ndarray):
+                result[key] = [s.decode('utf-8') if isinstance(s, bytes) else s for s in data.tolist()]
+            else:
+                result[key] = data  # Keep as is for other cases
+
+    # If all keys are numerical, convert dict to list
+    if all(k.isdigit() for k in result.keys()):
+        sorted_keys = sorted(result.keys(), key=int)  # Sort keys numerically
+        result = [result[k] for k in sorted_keys]  # Convert to list
 
     return result
 

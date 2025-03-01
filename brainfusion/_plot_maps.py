@@ -99,8 +99,6 @@ def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', ma
 
     # Plot original maps on background images and plot original/transformed maps next to each other
     for index, c in enumerate(analysis_file['myelin_datasets']):
-        if type(c) is str:
-            index = c
         # Extract arrays
         matched_contour = analysis_file['myelin_contours'][index]
         raw_data = analysis_file['myelin_datasets'][index]
