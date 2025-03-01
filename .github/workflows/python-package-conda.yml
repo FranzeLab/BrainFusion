@@ -19,6 +19,10 @@ jobs:
         conda env create --file environment.yml
         source activate brainfusion-env
         pip install .
+    - name: Debug Installed Packages
+      run: |
+        source activate brainfusion-env
+        pip list
     - name: Lint with flake8
       run: |
         conda install flake8
@@ -28,5 +32,6 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
+        source activate brainfusion-env
         conda install pytest
         pytest
