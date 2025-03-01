@@ -1,8 +1,8 @@
 # Directories
 building/*
 */prelim_code
-*/Example_1_BrainTissueStiffnessAndFluidity/data
-*/Example_2_JB_SpinalCord/data/
+/BrainFusion/examples/Example_1_BrainTissueStiffnessAndFluidity/data
+/BrainFusion/examples/Example_2_JB_SpinalCord/data
 /.idea
 .bash_history/
 .ssh/*
