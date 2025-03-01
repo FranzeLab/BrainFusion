@@ -14,8 +14,8 @@ setup(
         'scikit_learn >= 1.5.2',
         'scipy >= 1.14.1',
         'scikit-image>=0.23',
-        'shapely >=2.0.6'
-        'frechetdist >= 0.6'
+        'shapely >=2.0.6',
+        'frechetdist >= 0.6',
         'tqdm ~= 4.67.1'
     ],
     author='Niklas Gampl',
