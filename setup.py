@@ -10,6 +10,7 @@ setup(
         'numpy >= 2.1.1',
         'opencv_python >= 4.10.0.84',
         'pandas >= 2.2.3',
+        'pyarrow >= 19.0.1',
         'Pillow >= 10.4.0',
         'scikit_learn >= 1.5.2',
         'scipy >= 1.14.1',
