@@ -108,24 +108,9 @@ def plot_sc_experiments(analysis_file, results_folder, label='', cmap='grey', ma
 
         if verify_trafo:
             cmap = 'viridis'
-            num_points_per_axis = 50
-
-            # Get min and max x, y coordinates
-            min_x, min_y = np.min(matched_grid, axis=0) - [100, 100]
-            max_x, max_y = np.max(matched_grid, axis=0) + [100, 100]
-
-            # Generate linearly spaced grid points
-            x_values = np.linspace(min_x, max_x, num_points_per_axis)
-            y_values = np.linspace(min_y, max_y, num_points_per_axis)
-
-            # Create meshgrid
-            x_grid, y_grid = np.meshgrid(x_values, y_values)
-            matched_grid = np.column_stack((x_grid.ravel(), y_grid.ravel()))
-
-            # Randomly sample values from the discrete list for each grid point
+            matched_grid = analysis_file['verification_grids'][index]
+            trafo_grid = analysis_file['verification_trafo_grids'][index]
             raw_data = np.random.choice(np.linspace(1, 10, 10), size=matched_grid.shape[0])
-
-            trafo_grid, _ = transform_grid2contour(matched_contour, afm_contours[index], matched_grid)
 
         # Plot original and transformed data grids
         fig = plot_trafo_map(matched_contour,
@@ -662,7 +647,7 @@ def plot_cumulative(analysis_file, raw_key, projected=True, results_folder=None,
     plt.show()
 
 
-def plot_correlation_with_radii(afm_grid, myelin_grid, afm_contour, radii):
+def plot_correlation_with_radii(afm_grid, myelin_grid, afm_contour, radii, title=""):
     """
     Plots AFM and myelin grids with circles of given radius around AFM points.
     """
@@ -673,20 +658,20 @@ def plot_correlation_with_radii(afm_grid, myelin_grid, afm_contour, radii):
     ax.scatter(myelin_grid[:, 0], myelin_grid[:, 1], s=10, color='blue', label="Myelin Points", alpha=0.5)
 
     # Plot AFM Points (Red)
-    ax.scatter(afm_grid[:, 0], afm_grid[:, 1], s=12, color='red', label="AFM Points")
+    ax.scatter(afm_grid[:, 0], afm_grid[:, 1], s=15, color='red', label="AFM Points")
 
     # Plot AFM Contour (Black Line)
     ax.plot(afm_contour[:, 0], afm_contour[:, 1], 'k-', linewidth=2, label="AFM Contour")
 
     # Draw Circles Around AFM Points (Shaded Regions)
     for i, afm_point in enumerate(afm_grid):
-        circle = patches.Circle(afm_point, radii[i], color='gray', alpha=0.3)
+        circle = patches.Circle(afm_point, radii[i], color='red', alpha=0.2)
         ax.add_patch(circle)
 
     # Labels and Legend
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_title("AFM vs Myelin Grids with Search Radii")
+    ax.set_title(title, fontsize=18)
     ax.legend(loc="lower left", fontsize=15)
     ax.set_aspect('equal')
 

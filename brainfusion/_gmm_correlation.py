@@ -291,10 +291,17 @@ def correlate_afm_myelin(afm_analysis, radius='max', afm_metric='modulus', avera
 
     # Calculate correlations between AFM data and each myelin dataset
     for idx, myelin_name in enumerate(myelin_filenames):
+        myelin_grid = myelin_grids[idx]
+        myelin_dataset = myelin_datasets[idx]
+
+        if verify_corr:
+            myelin_grid = afm_analysis['verification_trafo_grids'][idx-1] if idx > 0 else afm_analysis['verification_grids'][0]
+            myelin_dataset = np.random.choice(np.linspace(1, 10, 10), size=myelin_grid.shape[0])
+
         # Mask myelin points inside contour
-        myelin_mask = mask_contour(afm_contour, myelin_grids[idx])
-        myelin_grid_filtered = myelin_grids[idx][myelin_mask]
-        myelin_data_filtered = myelin_datasets[idx][myelin_mask]
+        myelin_mask = mask_contour(afm_contour, myelin_grid)
+        myelin_grid_filtered = myelin_grid[myelin_mask]
+        myelin_data_filtered = myelin_dataset[myelin_mask]
 
         # Compute averaged myelin values
         avg_myelin_values, radii = average_within_radius(myelin_grid_filtered, myelin_data_filtered, afm_grid_filtered,
@@ -319,7 +326,9 @@ def correlate_afm_myelin(afm_analysis, radius='max', afm_metric='modulus', avera
             "p_value": p_value
         })
 
-        plot_correlation_with_radii(afm_grid_filtered, myelin_grid_filtered, afm_contour, radii)
+        plot_correlation_with_radii(afm_grid_filtered, myelin_grid_filtered, afm_contour, radii,
+                                    title=results[-1]["correlation_pair"])
+        print(results[-1]["correlation_pair"] + ": " + f"{correlation}")
 
     # Convert results to DataFrame
     results_df = pd.DataFrame(results)

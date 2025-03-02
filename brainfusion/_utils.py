@@ -67,6 +67,22 @@ def mask_contour(contour, grid):
     return mask
 
 
+def regular_grid_on_contour(contour, axis_points=50):
+    # Get min and max x, y coordinates
+    min_x, min_y = np.min(contour, axis=0)
+    max_x, max_y = np.max(contour, axis=0)
+
+    # Generate linearly spaced grid points
+    x_values = np.linspace(min_x, max_x, axis_points)
+    y_values = np.linspace(min_y, max_y, axis_points)
+
+    # Create meshgrid
+    x_grid, y_grid = np.meshgrid(x_values, y_values)
+    grid = np.column_stack((x_grid.ravel(), y_grid.ravel()))
+
+    return grid
+
+
 def check_parameters(params_defined, params_loaded):
     # Check if params variables differ
     differences = {}

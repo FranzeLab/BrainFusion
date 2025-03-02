@@ -7,6 +7,7 @@ from brainfusion._match_contours import (interpolate_contour, align_contours, fi
 from brainfusion._transform_2Dmap import extend_grid, transform_grid2contour
 from brainfusion._gmm_correlation import fit_coordinates_gmm
 from brainfusion.load_experiments.load_afm import load_sc_afm_myelin
+from brainfusion._utils import regular_grid_on_contour
 
 
 def process_multiple_experiments(load_experiment_func, base_folder, results_folder, **kwargs):
@@ -140,19 +141,24 @@ def process_sc_experiment(path, boundary_filename, key_point_filename, rot_axis_
     # Initialise grid to interpolate transformed data on
     extended_grid = extend_grid(myelin_grids[0], 50, 50)  # ToDo: Change myelin_grids[0] to AFM grid
 
+    # Create regular test grids for verifying correct transformation
+    verification_grids = [regular_grid_on_contour(c) for c in myelin_contours]
+
     # Using boundary matched contours to model plane transformation with thin plate spline interpolation
-    trafo_data_maps, trafo_grids, trafo_contours = [], [], []
+    trafo_data_maps, trafo_grids, trafo_contours, trafo_ver_grids = [], [], [], []
     for index, contour in enumerate(myelin_contours):
-        trafo_grid, trafo_contour = transform_grid2contour(myelin_contours[index],
-                                                           afm_contours[index],
-                                                           myelin_grids[index],
-                                                           progress=f' {index + 1} out of {len(matched_contours) - 1}')
+        trafo_grid, trafo_ver_grid, trafo_contour = transform_grid2contour(myelin_contours[index],
+                                                                           afm_contours[index],
+                                                                           myelin_grids[index],
+                                                                           verification_grids[index],
+                                                                           progress=f' {index + 1} out of {len(matched_contours) - 1}')
 
         # Interpolate maps from deformed grids to common regular grid
         trafo_data = griddata(myelin_grids[index], myelin_datasets[index].ravel(), extended_grid, method='nearest')
 
         trafo_data_maps.append(trafo_data)
         trafo_grids.append(trafo_grid)
+        trafo_ver_grids.append(trafo_ver_grid)
         trafo_contours.append(trafo_contour)
 
     # Calculate the mean of interpolated maps
@@ -165,7 +171,9 @@ def process_sc_experiment(path, boundary_filename, key_point_filename, rot_axis_
         'myelin_trafo_contours': trafo_contours,
         'afm_grid': afm_grid,
         'myelin_grids': myelin_grids,
+        'verification_grids': verification_grids,
         'myelin_trafo_grids': trafo_grids,
+        'verification_trafo_grids': trafo_ver_grids,
         'myelin_interpolated_grid': extended_grid,
         'afm_dataset': afm_dataset,
         'myelin_datasets': myelin_datasets,
