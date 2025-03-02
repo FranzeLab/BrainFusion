@@ -2,6 +2,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.patches as patches
 from scipy.optimize import curve_fit
 from scipy.stats import f
 
@@ -659,6 +660,38 @@ def plot_cumulative(analysis_file, raw_key, projected=True, results_folder=None,
     os.makedirs(results_folder, exist_ok=True)
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
+
+
+def plot_correlation_with_radii(afm_grid, myelin_grid, afm_contour, radii):
+    """
+    Plots AFM and myelin grids with circles of given radius around AFM points.
+    """
+    # Create plot
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    # Plot Myelin Points (Blue)
+    ax.scatter(myelin_grid[:, 0], myelin_grid[:, 1], s=10, color='blue', label="Myelin Points", alpha=0.5)
+
+    # Plot AFM Points (Red)
+    ax.scatter(afm_grid[:, 0], afm_grid[:, 1], s=12, color='red', label="AFM Points")
+
+    # Plot AFM Contour (Black Line)
+    ax.plot(afm_contour[:, 0], afm_contour[:, 1], 'k-', linewidth=2, label="AFM Contour")
+
+    # Draw Circles Around AFM Points (Shaded Regions)
+    for i, afm_point in enumerate(afm_grid):
+        circle = patches.Circle(afm_point, radii[i], color='gray', alpha=0.3)
+        ax.add_patch(circle)
+
+    # Labels and Legend
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("AFM vs Myelin Grids with Search Radii")
+    ax.legend(loc="lower left", fontsize=15)
+    ax.set_aspect('equal')
+
+    plt.show()
+    return fig
 
 
 def format_p_value(p):

@@ -5,5 +5,5 @@ afm_params = {
     "key_point_filename": "midline_closing_points",  # Choose .txt file containing a common starting point on the outline; can be None
     "rot_axis_filename": "midline_axis",  # Choose .txt file containing two points along which the contours will be aligned (rotation); can be None
     "contour_interp_n": 200,  # Choose the number of points the contours will be interpolated to
-    "sampling_size": 100  # Randomly sample given number of points from myelin dataset; should be used for testing only and otherwise None
+    "sampling_size": None  # Randomly sample given number of points from myelin dataset; should be used for testing only and otherwise None
 }

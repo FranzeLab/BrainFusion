@@ -1,6 +1,7 @@
 # brainfusion/__init__.py
 
-from brainfusion._gmm_correlation import fit_coordinates_gmm, bin_and_correlate, afm_brillouin_transformation
+from brainfusion._gmm_correlation import (fit_coordinates_gmm, bin_and_correlate, afm_brillouin_transformation,
+                                          correlate_afm_myelin)
 from brainfusion._match_contours import interpolate_contour, align_contours, align_sc_contours, find_average_contour
 from brainfusion._plot_maps import plot_experiments, plot_sc_experiments
 from brainfusion._transform_2Dmap import transform_grid2contour, extend_grid
@@ -15,5 +16,6 @@ __all__ = [
     "export_analysis",
     "import_analysis",
     "check_parameters",
-    "append_parquet_file"
+    "append_parquet_file",
+    "correlate_afm_myelin"
 ]

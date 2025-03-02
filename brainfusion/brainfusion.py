@@ -160,7 +160,7 @@ def process_sc_experiment(path, boundary_filename, key_point_filename, rot_axis_
 
     # Creating the analysis dictionary
     structured_data = {
-        'afm_contours': afm_contours,  # This contour is matched with the first myelin contour!
+        'afm_contours': afm_contours,  # Similar contours but matched to respective myelin contours!
         'myelin_contours': myelin_contours,
         'myelin_trafo_contours': trafo_contours,
         'afm_grid': afm_grid,
