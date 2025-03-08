@@ -273,14 +273,14 @@ def correlate_afm_myelin(afm_analysis, radius='max', afm_metric='modulus', avera
     Computes the correlation between AFM data and averaged myelin data within a given radius.
     Only considers data points inside the AFM contour.
     """
-    afm_contour = afm_analysis['afm_contours'][0]
-    afm_data = afm_analysis['afm_dataset'][afm_metric]
-    afm_grid = afm_analysis['afm_grid']
+    afm_contour = afm_analysis['template_contours'][0]
+    afm_data = afm_analysis['template_dataset'][afm_metric]
+    afm_grid = afm_analysis['template_grid']
 
     # Insert interpolated dataset at index 0
-    myelin_datasets = [afm_analysis['myelin_interpolated_dataset']] + afm_analysis['myelin_datasets']
-    myelin_grids = [afm_analysis['myelin_interpolated_grid']] + afm_analysis['myelin_trafo_grids']
-    myelin_filenames = ['Interpolated'] + afm_analysis['myelin_filenames']
+    myelin_datasets = [afm_analysis['measurement_interpolated_dataset']] + afm_analysis['measurement_datasets']
+    myelin_grids = [afm_analysis['measurement_interpolated_grid']] + afm_analysis['measurement_trafo_grids']
+    myelin_filenames = ['Interpolated'] + afm_analysis['measurement_filenames']
 
     results = []
 
