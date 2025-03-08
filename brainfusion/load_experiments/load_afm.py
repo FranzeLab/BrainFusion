@@ -52,7 +52,7 @@ def load_batchforce_single(folder_path, afm_variables, data_filename='data.csv',
                            rot_axis_filename="None", grid_conv_filename='GridInversionMatrix.csv',
                            boundary_filename='brain_outline', sampling_size="None"):
     """
-    Function to load an AFM experiment analysed with the batchforce Matlab library and the outline coordinates.
+    Load an AFM experiment analysed with the batchforce Matlab library and the outline coordinates.
     """
     # Load the AFM analysis file
     data_path = os.path.join(folder_path, 'region analysis', data_filename)
