@@ -188,22 +188,24 @@ def load_sc_afm_myelin(folder_path, boundary_filename, key_point_filename=None, 
     # contours and an axis used to align contours can be included
 
     # Load all myelin and AFM associated key-points in a list
+    # ToDo: Make choice of points more robust for multiple key-points
     myelin_keypoints, afm_keypoint = [], []
-    keypoint_idx = 0  # If more than one keypoint is defined, use the first  # ToDo: Allow for multiple key-points
-    if type(key_point_filename) != "None":
+    if key_point_filename != "None":
         myelin_p_filenames = [p for p in os.listdir(folder_path) if f'ani{exp_num}' in p and
                               p.endswith(key_point_filename + ".txt")]
         for index, filename in enumerate(myelin_p_filenames):
             file_path = os.path.join(folder_path, filename)
-            myelin_keypoint = get_roi_from_txt(file_path, delimiter=',')[keypoint_idx]
+            myelin_keypoint_list = get_roi_from_txt(file_path, delimiter=',')
+            myelin_keypoint = min(myelin_keypoint_list, key=lambda p: p[1])
             myelin_keypoints.append(myelin_keypoint)
 
         afm_p_filename = os.path.join(folder_path, f'overview_#{exp_num}_{key_point_filename}.txt')
-        afm_keypoint = get_roi_from_txt(os.path.join(folder_path, afm_p_filename), delimiter=',')[keypoint_idx]
+        afm_keypoint_list = get_roi_from_txt(os.path.join(folder_path, afm_p_filename), delimiter=',')
+        afm_keypoint = min(afm_keypoint_list, key=lambda p: p[1])
 
     # Load all myelin rotation axes in a list
     myelin_axes, afm_axis = [], []
-    if type(rot_axis_filename) != "None":
+    if rot_axis_filename != "None":
         myelin_r_filenames = [p for p in os.listdir(folder_path) if f'ani{exp_num}' in p and
                               p.endswith(rot_axis_filename + ".txt")]
         for index, filename in enumerate(myelin_r_filenames):

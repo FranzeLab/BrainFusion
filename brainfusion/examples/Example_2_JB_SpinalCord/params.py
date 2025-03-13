@@ -9,6 +9,6 @@ myelin_params = {
     "grid_conv_filename": "GridInversionMatrix.csv",  # Name of file containing grid conversion variables
     "boundary_filename": "whitematter_outline",  # Choose the .txt files containing the outline coordinates
     "sampling_size": 100,  # Randomly sample given number of points from myelin dataset; should be used for testing only and otherwise "None",
-    "contour_interp_n": 200,  # Choose the number of points the contours will be interpolated to
+    "contour_interp_n": 500,  # Choose the number of points the contours will be interpolated to
     "clustering": "None"  # "GMM": Use Gaussian Mixture Model to cluster data points and create average map; "None": Use regular grid interpolation and average
 }
