@@ -1,7 +1,7 @@
 # brainfusion/__init__.py
 
 from brainfusion.load_experiments.load_afm import load_batchforce_all, load_batchforce_single, load_sc_afm_myelin
-from brainfusion.load_experiments.load_hcr import load_hcr_experiment
+from brainfusion.load_experiments.load_images import load_hcr_experiment, load_synapse_experiment
 from brainfusion._gmm_correlation import (fit_coordinates_gmm, bin_and_correlate, afm_brillouin_transformation,
                                           correlate_afm_myelin)
 from brainfusion._match_contours import interpolate_contour, align_contours
@@ -15,6 +15,7 @@ __all__ = [
     "load_batchforce_single",
     "load_sc_afm_myelin",
     "load_hcr_experiment",
+    "load_synapse_experiment",
     "fuse_measurement_datasets",
     "plot_brainfusion_results",
     "export_analysis",

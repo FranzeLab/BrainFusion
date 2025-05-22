@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.path as mpath
+from scipy.stats import binned_statistic_2d
 
 
 def mask_contour(contour, grid):
@@ -71,3 +72,62 @@ def project_brillouin_dataset(bm_data, bm_metadata, br_intensity_threshold=15):
     bm_grid_proj = np.column_stack([bm_grid_proj[:, :, 0].ravel(), bm_grid_proj[:, :, 1].ravel()])
 
     return bm_data_proj, bm_grid_proj
+
+
+import numpy as np
+from scipy.stats import binned_statistic_2d
+
+
+def bin_single_image_channel(values, pixel_grid, bin_size=10):
+    """
+    Spatially bin an image by averaging values in 2D bins.
+    """
+    pixel_grid = np.asarray(pixel_grid)
+    values = np.asarray(values).flatten()
+
+    x, y = pixel_grid[:, 0], pixel_grid[:, 1]
+    if len(values) != len(x):
+        raise ValueError("Length of values must match number of coordinates in pixel_grid.")
+
+    # Define bin edges
+    x_bins = np.arange(x.min(), x.max() + bin_size, bin_size)
+    y_bins = np.arange(y.min(), y.max() + bin_size, bin_size)
+
+    # Bin the data
+    stat, x_edges, y_edges, _ = binned_statistic_2d(
+        x, y, values, statistic='mean', bins=[x_bins, y_bins]
+    )
+
+    # Compute bin centres
+    x_centres = (x_edges[:-1] + x_edges[1:]) / 2
+    y_centres = (y_edges[:-1] + y_edges[1:]) / 2
+    grid_x, grid_y = np.meshgrid(x_centres, y_centres, indexing='ij')
+    binned_grid = np.vstack([grid_x.flatten(), grid_y.flatten()]).T
+
+    # Flatten and filter out NaNs (empty bins)
+    binned_values = stat.flatten()
+    valid = ~np.isnan(binned_values)
+
+    return binned_values[valid], binned_grid[valid]
+
+
+def map_values_to_grid(grid_points, values, regular_grid):
+    """
+    Maps Nx1 values to an (H, W) matrix.
+    """
+    H, W = regular_grid.shape[:2]
+    value_matrix = np.full((H, W), np.nan)
+
+    # Create fast lookup: map grid coordinates to indices
+    coord_to_index = {(x, y): (i, j)
+                      for i in range(H)
+                      for j in range(W)
+                      for x, y in [tuple(regular_grid[i, j])]}
+
+    for point, val in zip(grid_points, values):
+        key = tuple(np.round(point, decimals=6))  # match precision with regular_grid
+        if key in coord_to_index:
+            i, j = coord_to_index[key]
+            value_matrix[i, j] = val
+
+    return value_matrix

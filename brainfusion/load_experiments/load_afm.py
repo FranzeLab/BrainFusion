@@ -78,7 +78,7 @@ def load_batchforce_single(folder_path, afm_variables, data_filename='data.csv',
     # Get filetype extension
     extension = os.path.splitext(data_filename)[1]
     if extension == '.mat':
-        raise ValueError(f"Importing {extension} files is not implemented yet, use writematrix(M, 'GridInversionMatrix.csv ')"
+        raise ValueError(f"Importing {extension} files is not implemented yet, use writematrix(M, 'GridInversionMatrix.csv')"
                          f"in Matlab")
     elif extension == '.csv':
         df = pd.read_csv(grid_vars_path, header=None)

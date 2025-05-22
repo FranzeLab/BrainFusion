@@ -204,9 +204,6 @@ def circularly_shift_contours(contours, template_contour, init_points=None):
         if get_contour_orientation(contour) != orientation:
             shifted_contour = shifted_contour[::-1]  # Reverse the order
 
-        # Close contours
-        shifted_contour[-1, :] = shifted_contour[0, :]
-
         modified_contours.append(shifted_contour)
 
     return modified_contours

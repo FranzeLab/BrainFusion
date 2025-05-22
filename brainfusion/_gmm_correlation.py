@@ -14,6 +14,37 @@ from brainfusion._plot_maps import plot_contours, plot_corr_maps, plot_correlati
 from brainfusion._utils import mask_contour
 
 
+def nearest_neighbour_interp(org_points, values, reg_points, unique=True):
+    """
+    Interpolates values onto a regular grid using nearest-neighbour search. Each original point is used uniquely and
+    assigned to the grid point it is closest to if specified.
+    """
+    # Build KD-Tree for the regular grid
+    tree = cKDTree(reg_points)
+
+    # Find nearest grid point for each data point
+    distances, assigned_grid_indices = tree.query(org_points, k=1)
+
+    # Initialize output with NaNs
+    M = len(reg_points)
+    grid_values = np.full(M, np.nan)
+
+    if unique:
+        # Track minimum distances to ensure the closest point is used
+        min_distances = np.full(M, np.inf)
+
+        # Assign each data point to the closest grid point uniquely
+        for data_idx, grid_idx in enumerate(assigned_grid_indices):
+            if distances[data_idx] < min_distances[grid_idx]:  # Only replace if closer
+                min_distances[grid_idx] = distances[data_idx]
+                grid_values[grid_idx] = values[data_idx]
+    else:
+        # Directly assign values (non-unique mode, allowing overwrites)
+        grid_values[assigned_grid_indices] = values
+
+    return grid_values
+
+
 def fit_coordinates_gmm(grids, data_list, trafo_data=None, same_maps=True, num_components='mean'):
     assert num_components in ['mean', 'min'], 'Please provide a valid metric for estimating the cluster numbers!'
     if num_components == 'mean':

@@ -26,7 +26,7 @@ def transform_grid2contour(original_contour, deformed_contour, original_grid, te
 
 
 # ToDo: Implement new interpolation function scipy.interpolate.RBFInterpolator
-def create_rbf_interpolators(original_contour, deformed_contour, function='thin_plate', smooth=0.2):
+def create_rbf_interpolators(original_contour, deformed_contour, function='linear', smooth=0.2):
     x_orig, y_orig = original_contour[:, 0], original_contour[:, 1]
     x_deform, y_deform = deformed_contour[:, 0], deformed_contour[:, 1]
 
@@ -36,37 +36,51 @@ def create_rbf_interpolators(original_contour, deformed_contour, function='thin_
     return rbf_x, rbf_y
 
 
-def extend_grid(regular_grid, x_extend, y_extend):
-    # Get minimum and maximum coordinate values in x and y
-    x_min, y_min = np.min(regular_grid, axis=0)
-    x_max, y_max = np.max(regular_grid, axis=0)
+import numpy as np
 
-    # Round coordinates and extract x and y values
-    x_values = regular_grid[:, 0].round(decimals=0)
-    y_values = regular_grid[:, 1].round(decimals=0)
 
-    # Find unique sorted x and y coordinates
-    x_sorted = np.sort(np.unique(x_values))
-    y_sorted = np.sort(np.unique(y_values))
+def extend_grid(measurement_grids, x_extend, y_extend):
+    """
+    Extends the overall grid based on multiple measurement grids.
+    """
+    # Find global min/max across all grids
+    all_points = np.vstack(measurement_grids)
+    x_min, y_min = np.min(all_points, axis=0)
+    x_max, y_max = np.max(all_points, axis=0)
 
-    x_diff = np.diff(x_sorted)
-    y_diff = np.diff(y_sorted)
+    # Compute spacing separately for each grid
+    x_spacings = []
+    y_spacings = []
 
-    # Estimate regular spacing using the mean and median (robust to missing points)
-    x_median_spacing, x_mean_spacing = np.median(x_diff), np.mean(x_diff)
-    y_median_spacing, y_mean_spacing = np.median(y_diff), np.mean(x_diff)
+    for grid in measurement_grids:
+        x_sorted = np.sort(np.unique(grid[:, 0].round(decimals=0)))
+        y_sorted = np.sort(np.unique(grid[:, 1].round(decimals=0)))
 
-    # Check if standard deviation of spacings fluctuates more than 15% around mean spacing
-    #assert (np.std(x_diff) / x_mean_spacing) * 100 < 0.15
-    #assert (np.std(y_diff) / y_mean_spacing) * 100 < 0.15
+        x_diff = np.diff(x_sorted)
+        y_diff = np.diff(y_sorted)
 
-    # Generate new extended coordinates using the estimated spacing
-    x_new = np.arange(x_min - x_extend, x_max + x_extend + x_median_spacing, x_median_spacing)
-    y_new = np.arange(y_min - y_extend, y_max + y_extend + y_median_spacing, y_median_spacing)
+        if len(x_diff) > 0:
+            x_spacings.append(np.median(x_diff))  # Median x-spacing for this grid
+        if len(y_diff) > 0:
+            y_spacings.append(np.median(y_diff))  # Median y-spacing for this grid
+
+    # Take the median across all grids to determine global spacing
+    x_median_spacing = np.median(x_spacings) if x_spacings else 1
+    y_median_spacing = np.median(y_spacings) if y_spacings else 1
+
+    # Compute extension factor
+    x_extend_factor = x_extend * (x_max - x_min)
+    y_extend_factor = y_extend * (y_max - y_min)
+
+    # Generate extended coordinate range
+    x_new = np.arange(x_min - x_extend_factor, x_max + x_extend_factor + x_median_spacing, x_median_spacing)
+    y_new = np.arange(y_min - y_extend_factor, y_max + y_extend_factor + y_median_spacing, y_median_spacing)
 
     # Create the extended meshgrid
     x, y = np.meshgrid(x_new, y_new)
-    extended_grid = np.stack([x, y], axis=-1)
-    extended_grid = np.vstack([extended_grid[:, :, 0].ravel(), extended_grid[:, :, 1].ravel()]).T
+    extended_grid_regular = np.stack([x, y], axis=-1)
+    extended_grid_stack = np.vstack([extended_grid_regular[:, :, 0].ravel(), extended_grid_regular[:, :, 1].ravel()]).T
+    extended_grid_shape = list(x.shape)
 
-    return extended_grid
+    return extended_grid_stack, extended_grid_shape
+
