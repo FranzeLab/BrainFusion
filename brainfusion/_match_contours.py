@@ -27,7 +27,7 @@ def align_contours(contour_list, grid_list, rot_axes=None, init_points=None, tem
     assert 0 <= template_index < len(contour_list), print("Contour template index out of range!")
 
     # Match contours using ellipse fit
-    matched_contours, matched_grids, matched_points = [], [], []
+    matched_contours, matched_grids, matched_points, affine_matrices = [], [], [], []
     for i, contour in enumerate(contour_list):
         ang = angle_between_lines(rot_axes[i], rot_axes[template_index]) if rot_axes[i] is not None else None
 
@@ -48,6 +48,7 @@ def align_contours(contour_list, grid_list, rot_axes=None, init_points=None, tem
         matched_contours.append(matched_contour)
         matched_grids.append(matched_grid)
         matched_points.append(matched_point)
+        affine_matrices.append(np.linalg.inv(contour_trafo.params))  # Save inverted 3x3 affine matrix
 
     # Circularly shift contours to match template
     template_contour = matched_contours[template_index]
@@ -55,7 +56,7 @@ def align_contours(contour_list, grid_list, rot_axes=None, init_points=None, tem
                                                  template_contour=template_contour,
                                                  init_points=matched_points)
 
-    return shifted_contours, matched_grids
+    return shifted_contours, matched_grids, affine_matrices
 
 
 def angle_between_lines(source_axis, target_axis):
@@ -217,12 +218,13 @@ def get_contour_orientation(contour):
     return 'clockwise' if signed_area < 0 else 'counterclockwise'
 
 
-def boundary_match_contours(contours, template_index=0):
+def boundary_match_contours(contours, template_index=0, curvature=0.5):
     # Boundary matching using dynamic time warping with tangent penalty
     dtw_contours, dtw_tmp_contours = [], []
 
     for i, contour in enumerate(contours):
-        contour_dtw, contour_template_dtw = dtw_with_curvature_penalty(contour, contours[template_index])
+        contour_dtw, contour_template_dtw = dtw_with_curvature_penalty(contour, contours[template_index],
+                                                                       base_lambda_curvature=curvature)
         dtw_contours.append(contour_dtw)
         dtw_tmp_contours.append(contour_template_dtw)
 

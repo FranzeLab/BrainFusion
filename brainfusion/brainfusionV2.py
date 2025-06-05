@@ -9,7 +9,7 @@ from brainfusion._gmm_correlation import nearest_neighbour_interp, fit_coordinat
 from brainfusion._utils import regular_grid_on_contour
 
 
-def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, datasets, contours, points, axes, filenames,
+def fuse_correlation_datasets(base_path, template, grids, image_dims, scales, datasets, contours, points, axes, filenames,
                               bg_images, contour_interp_n=200, clustering='Mean', outline_averaging='star_domain',
                               pullback=False, smooth='auto', curvature=0.5, **kwargs):
     """
@@ -68,7 +68,7 @@ def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, da
     measurement_contours = dtw_contours[1:]
 
     # Initialise grid to interpolate transformed data on
-    extended_grid, extended_grid_shape = extend_grid(measurement_grids, 0.1, 0.1)
+    extended_grid, extended_grid_shape = extend_grid([measurement_grids[0]], 0.1, 0.1)
 
     # Create regular test grids for verifying correct transformation
     verification_grids = [regular_grid_on_contour(c) for c in measurement_contours]

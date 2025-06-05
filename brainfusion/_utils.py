@@ -3,6 +3,15 @@ import matplotlib.path as mpath
 from scipy.stats import binned_statistic_2d
 
 
+def apply_affine_transform(coords, affine):
+    """
+    Apply a 3x3 affine transformation to Nx2 coordinates.
+    """
+    coords_hom = np.hstack([coords, np.ones((coords.shape[0], 1))])  # (N, 3)
+    transformed = coords_hom @ affine.T  # (N, 3)
+    return transformed[:, :2]  # drop homogeneous coordinate
+
+
 def mask_contour(contour, grid):
     # Create the path from the contour
     path = mpath.Path(contour)
@@ -74,41 +83,47 @@ def project_brillouin_dataset(bm_data, bm_metadata, br_intensity_threshold=15):
     return bm_data_proj, bm_grid_proj
 
 
-import numpy as np
-from scipy.stats import binned_statistic_2d
+def bin_single_image_channel(img, bin_size, method='mean', crop=True):
+    N, M = img.shape
+
+    if crop:
+        new_N = N - (N % bin_size)
+        new_M = M - (M % bin_size)
+        img = img[:new_N, :new_M]
+    else:
+        # Pad to make divisible
+        pad_N = (bin_size - N % bin_size) % bin_size
+        pad_M = (bin_size - M % bin_size) % bin_size
+        img = np.pad(img, ((0, pad_N), (0, pad_M)), mode='constant')
+
+    # Bin the image
+    reshaped = img.reshape(img.shape[0] // bin_size, bin_size,
+                           img.shape[1] // bin_size, bin_size)
+
+    if method == 'mean':
+        return reshaped.mean(axis=(1, 3))
+    elif method == 'sum':
+        return reshaped.sum(axis=(1, 3))
+    elif method == 'max':
+        return reshaped.max(axis=(1, 3))
+    else:
+        raise ValueError("Invalid method: choose 'mean', 'sum', or 'max'")
 
 
-def bin_single_image_channel(values, pixel_grid, bin_size=10):
-    """
-    Spatially bin an image by averaging values in 2D bins.
-    """
-    pixel_grid = np.asarray(pixel_grid)
-    values = np.asarray(values).flatten()
+def transform_outline_for_binning(outline, bin_size, crop=False, original_shape=None):
+    outline = np.asarray(outline, dtype=float)
 
-    x, y = pixel_grid[:, 0], pixel_grid[:, 1]
-    if len(values) != len(x):
-        raise ValueError("Length of values must match number of coordinates in pixel_grid.")
+    if crop and original_shape is not None:
+        N, M = original_shape
+        new_N = N - (N % bin_size)
+        new_M = M - (M % bin_size)
+        # Filter out points that are outside the cropped region
+        keep = (outline[:, 0] < new_M) & (outline[:, 1] < new_N)
+        outline = outline[keep]
 
-    # Define bin edges
-    x_bins = np.arange(x.min(), x.max() + bin_size, bin_size)
-    y_bins = np.arange(y.min(), y.max() + bin_size, bin_size)
-
-    # Bin the data
-    stat, x_edges, y_edges, _ = binned_statistic_2d(
-        x, y, values, statistic='mean', bins=[x_bins, y_bins]
-    )
-
-    # Compute bin centres
-    x_centres = (x_edges[:-1] + x_edges[1:]) / 2
-    y_centres = (y_edges[:-1] + y_edges[1:]) / 2
-    grid_x, grid_y = np.meshgrid(x_centres, y_centres, indexing='ij')
-    binned_grid = np.vstack([grid_x.flatten(), grid_y.flatten()]).T
-
-    # Flatten and filter out NaNs (empty bins)
-    binned_values = stat.flatten()
-    valid = ~np.isnan(binned_values)
-
-    return binned_values[valid], binned_grid[valid]
+    # Scale down coordinates
+    outline = (outline - 0.5) / np.sqrt(bin_size) + 0.5
+    return outline
 
 
 def map_values_to_grid(grid_points, values, regular_grid):

@@ -42,6 +42,7 @@ def check_parameters(params_defined, params_loaded):
 
 
 def export_analysis(path, analysis, params):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with h5py.File(path, 'w') as h5file:
         write_dict_in_h5(h5file, '/', analysis)
 

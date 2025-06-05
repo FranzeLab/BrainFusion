@@ -5,17 +5,17 @@ from shapely.geometry import Polygon, Point, LineString
 from brainfusion._match_contours import get_contour_orientation
 
 
-def find_average_contour(contours_list, average='star_domain', num_bins=360, metric='jaccard'):
+def find_average_contour(contours_list, average='star_domain', star_bins=360, error_metric='jaccard'):
     # Calculate the average contour
-    avg_contour = calculate_average_contour(contours_list, average=average, num_bins=num_bins)
+    avg_contour = calculate_average_contour(contours_list, average=average, star_bins=star_bins)
 
     # Calculate error
-    errors = calculate_distances(contours_list, avg_contour, metric=metric)
+    errors = calculate_distances(contours_list, avg_contour, metric=error_metric)
 
     return avg_contour, errors
 
 
-def calculate_average_contour(contours, average='star_domain', num_bins=360):
+def calculate_average_contour(contours, average='star_domain', star_bins=360):
     if average == 'star_domain':
         def is_star_domain(contour, centre, tol=10):
             polygon = Polygon(contour)  # Convert contour to a polygon
@@ -68,7 +68,7 @@ def calculate_average_contour(contours, average='star_domain', num_bins=360):
         mean_angle = np.angle(np.mean(np.exp(1j * np.array(init_angles))))
 
         # Create a uniform grid of angles starting at the mean angle
-        angle_bins = np.linspace(mean_angle, mean_angle + 2 * np.pi, num_bins, endpoint=False)
+        angle_bins = np.linspace(mean_angle, mean_angle + 2 * np.pi, star_bins, endpoint=False)
 
         # Interpolate radii for each contour onto the uniform grid
         interpolated_radii = np.array([

@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler
 from scipy.interpolate import griddata
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree, Delaunay
 from scipy.stats import pearsonr
 import pandas as pd
 
@@ -14,35 +14,60 @@ from brainfusion._plot_maps import plot_contours, plot_corr_maps, plot_correlati
 from brainfusion._utils import mask_contour
 
 
-def nearest_neighbour_interp(org_points, values, reg_points, unique=True):
+def nearest_neighbour_interp(org_points, values, target_points, method='nearest', unique=True):
     """
-    Interpolates values onto a regular grid using nearest-neighbour search. Each original point is used uniquely and
-    assigned to the grid point it is closest to if specified.
+    Interpolate values at target_points from org_points and their values.
     """
-    # Build KD-Tree for the regular grid
-    tree = cKDTree(reg_points)
+    if method == 'nearest':
+        if not unique:
+            # griddata-like nearest
+            tree_src = cKDTree(org_points)
+            _, nearest_src_idx = tree_src.query(target_points, k=1)
+            return values[nearest_src_idx]
+        else:
+            # unique nearest: source -> nearest target, assign only closest source per target
+            tree_tgt = cKDTree(target_points)
+            distances, nearest_tgt_idx = tree_tgt.query(org_points, k=1)
 
-    # Find nearest grid point for each data point
-    distances, assigned_grid_indices = tree.query(org_points, k=1)
+            M = len(target_points)
+            interpolated_values = np.full(M, np.nan)
+            min_distances = np.full(M, np.inf)
 
-    # Initialize output with NaNs
-    M = len(reg_points)
-    grid_values = np.full(M, np.nan)
+            for src_idx, tgt_idx in enumerate(nearest_tgt_idx):
+                dist = distances[src_idx]
+                if dist < min_distances[tgt_idx]:
+                    min_distances[tgt_idx] = dist
+                    interpolated_values[tgt_idx] = values[src_idx]
 
-    if unique:
-        # Track minimum distances to ensure the closest point is used
-        min_distances = np.full(M, np.inf)
+            return interpolated_values
 
-        # Assign each data point to the closest grid point uniquely
-        for data_idx, grid_idx in enumerate(assigned_grid_indices):
-            if distances[data_idx] < min_distances[grid_idx]:  # Only replace if closer
-                min_distances[grid_idx] = distances[data_idx]
-                grid_values[grid_idx] = values[data_idx]
+    elif method == 'linear':
+        # Linear interpolation with Delaunay triangulation
+        tri = Delaunay(org_points)
+
+        # Find the simplex (triangle/tetrahedron) containing each target point
+        simplex_indices = tri.find_simplex(target_points)
+
+        # Initialize output with NaNs for points outside convex hull
+        interpolated_values = np.full(len(target_points), np.nan)
+
+        # For points inside convex hull (simplex_index != -1), interpolate
+        inside = simplex_indices >= 0
+        if np.any(inside):
+            # Affine transform matrices for barycentric calculation
+            X = tri.transform[simplex_indices[inside], :org_points.shape[1]]
+            Y = target_points[inside] - tri.transform[simplex_indices[inside], org_points.shape[1]]
+            bary = np.einsum('ijk,ik->ij', X, Y)
+            bary_coords = np.c_[bary, 1 - bary.sum(axis=1)]
+
+            vertices = tri.simplices[simplex_indices[inside]]
+            vals = values[vertices]
+            interpolated_values[inside] = np.einsum('ij,ij->i', vals, bary_coords)
+
+        return interpolated_values
+
     else:
-        # Directly assign values (non-unique mode, allowing overwrites)
-        grid_values[assigned_grid_indices] = values
-
-    return grid_values
+        raise ValueError(f"Unsupported interpolation method: {method}")
 
 
 def fit_coordinates_gmm(grids, data_list, trafo_data=None, same_maps=True, num_components='mean'):

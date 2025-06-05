@@ -1,14 +1,14 @@
 import os
-import re
 import tifffile as tiff
-from tifffile import imread, TiffFile
+from tifffile import TiffFile
 import numpy as np
 
 from brainfusion._io import get_roi_from_txt
-from brainfusion._utils import bin_single_image_channel
+from brainfusion._utils import bin_single_image_channel, transform_outline_for_binning, apply_affine_transform
 
-def load_hcr_experiment(folder_path, hcr_variables, data_filename='data.csv', key_point_filename="None",
-                        rot_axis_filename="None", grid_conv_filename='GridInversionMatrix.csv',
+
+
+def load_hcr_experiment(folder_path, key_point_filename="None", rot_axis_filename="None",
                         boundary_filename='brain_outline', sampling_size="None", **kwargs):
     """
     Load maximum projected .tif files including all channels and tissue outlines.
@@ -100,9 +100,9 @@ def load_hcr_experiment(folder_path, hcr_variables, data_filename='data.csv', ke
     return results
 
 
-def load_synapse_experiment(folder_path, syn_variables, key_point_filename="None", rot_axis_filename="None",
-                            grid_conv_filename='GridInversionMatrix.csv', boundary_filename='BrainBoundary',
-                            bin_size="None", bit_depth=16, normalize_percentile="None", clip=False, **kwargs):
+def load_synapse_experiment(folder_path, key_point_filename="None", rot_axis_filename="None",
+                            boundary_filename='BrainBoundary', bin_size="None", bit_depth=16,
+                            normalize_percentile="None", clip=False, **kwargs):
     """
     Load .tif files including all channels and tissue outlines.
     """
@@ -110,51 +110,67 @@ def load_synapse_experiment(folder_path, syn_variables, key_point_filename="None
     tif_i_filenames = [f for f in os.listdir(folder_path) if f.lower().endswith('.tif')]
 
     # Import tif images
-    tif_grids, tif_grids_dims, tif_datasets, tif_contours, filenames = [], [], [], [], []
+    tif_grids, tif_grids_dims, scale_matrices, tif_datasets, tif_contours, filenames = [], [], [], [], [], []
     for filename in tif_i_filenames:
         file_path = os.path.join(folder_path, filename)
 
-        # Load image data
-        image = imread(file_path)
+        # Import contours corresponding to tif images
+        contour_filename = filename.removesuffix(".tif") + boundary_filename + '.txt'
+        contour_path = os.path.join(folder_path, contour_filename)
+        tif_contour = get_roi_from_txt(contour_path, delimiter='\t', skip=1)
 
         # Load resolution metadata
         with TiffFile(file_path) as tif:
+            image = tif.asarray()
             page = tif.pages[0]
             x_res = page.coords['width'][1]
             y_res = page.coords['height'][1]
 
-        # Get image dimensions
-        height, width = image.shape[-2:]  # Always get last two dimensions
+        # Handle single-channel and multi-channel images
+        channels = {}
+        binned = False
+
+        if image.ndim == 2:  # Single-channel
+            tmp_img = image
+            if isinstance(bin_size, int):
+                tmp_img = bin_single_image_channel(tmp_img, bin_size=bin_size, crop=True)
+                tif_contour = transform_outline_for_binning(tif_contour, bin_size=bin_size, crop=True,
+                                                            original_shape=image.shape[-2:])
+                binned = True
+            channels['Channel_1'] = tmp_img.ravel()
+            height, width = tmp_img.shape[-2:]
+
+        elif image.ndim == 3:  # Multi-channel
+            for i in range(image.shape[0]):
+                tmp_img = image[i]
+                if isinstance(bin_size, int):
+                    tmp_img = bin_single_image_channel(tmp_img, bin_size=bin_size, crop=True)
+                    tif_contour = transform_outline_for_binning(tif_contour, bin_size=bin_size, crop=True,
+                                                                original_shape=image.shape[-2:])
+                    binned = True
+                channels[f'Channel_{i + 1}'] = tmp_img.ravel()
+            height, width = tmp_img.shape[-2:]
+        else:
+            raise ValueError(f"Invalid image dimension: {image.ndim}")
+
+        if binned:
+            print('Attention: Data binning is activated to improve calculation time!')
+            x_res *= bin_size
+            y_res *= bin_size
 
         # Generate pixel coordinates grid
         xx, yy = np.meshgrid(np.arange(width), np.arange(height))
         pixel_grid = np.column_stack((xx.ravel(), yy.ravel()))
 
-        # Handle single-channel and multi-channel images
-        channels = {}
-        if image.ndim == 2:  # Single-channel
-            channels['Channel_1'] = image.ravel()
-        else:  # Multi-channel
-            for i in range(image.shape[0]):
-                channels[f'Channel_{i + 1}'] = image[i].ravel()
-
-        # Bin datasets for faster calculation
-        if type(bin_size) is int:
-            x_res, y_res = bin_size * x_res, bin_size * y_res
-            print('Attention: Data binning is activated to improve calculation time!')
-            for key, c in channels.items():
-                binned_values, pixel_grid_tmp = bin_single_image_channel(c, pixel_grid, bin_size=bin_size)
-                channels[key] = binned_values
-            pixel_grid = pixel_grid_tmp
-
-        # Renormalize image and clip high intensity values
-        if isinstance(normalize_percentile, int):
+        # Re-normalize image and clip high intensity values
+        if isinstance(normalize_percentile, int) or isinstance(normalize_percentile, float):
             if bit_depth not in [8, 12, 16]:
                 raise ValueError("bit_depth must be 8, 12, or 16")
             print(f'Attention: Channels are dynamically re-normalized to the {normalize_percentile}th percentile!')
 
             if clip is True:
-                print(f'Attention: Intensity values above the {normalize_percentile}th percentile are clipped to max value!')
+                print(
+                    f'Attention: Intensity values above the {normalize_percentile}th percentile are clipped to max value!')
 
             max_val = 2 ** bit_depth - 1
             dtype = np.uint16 if bit_depth > 8 else np.uint8
@@ -174,15 +190,19 @@ def load_synapse_experiment(folder_path, syn_variables, key_point_filename="None
                 # Convert to final integer type and store back
                 channels[key] = scaled.astype(dtype)
 
-        # Import contours corresponding to tif images
-        contour_filename = filename.removesuffix(".tif") + boundary_filename + '.txt'
-        contour_path = os.path.join(folder_path, contour_filename)
-        tif_contour = get_roi_from_txt(contour_path, delimiter='\t', skip=1)
+        # Transform coordinates from image to micro meter
+        scale_matrix = np.array([
+            [x_res, 0, 0],
+            [0, y_res, 0],
+            [0, 0, 1]])
+        pixel_grid = apply_affine_transform(pixel_grid, scale_matrix)
+        tif_contour = apply_affine_transform(tif_contour, scale_matrix)
 
         # Store data as dictionary and contour
         tif_contours.append(tif_contour)
         tif_grids.append(pixel_grid)
-        tif_grids_dims.append([height, width])
+        scale_matrices.append(np.linalg.inv(scale_matrix))
+        tif_grids_dims.append(np.array([height, width]))
         tif_datasets.append(channels)
         filenames.append(os.path.splitext(filename)[0])
 
@@ -212,11 +232,11 @@ def load_synapse_experiment(folder_path, syn_variables, key_point_filename="None
     else:
         tif_axes = [None] * len(tif_contours)
 
-    scales = "None"
     bg_image = "None"
 
     results = {"grids": tif_grids,
-               "scales": tif_grids_dims,
+               "image_dims": tif_grids_dims,
+               "scales": scale_matrices,
                "datasets": tif_datasets,
                "contours": tif_contours,
                "points": tif_keypoints,
