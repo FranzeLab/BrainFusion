@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.interpolate import griddata
 from scipy.interpolate import RegularGridInterpolator
 
 from brainfusion._match_contours import interpolate_contour, align_contours, boundary_match_contours
@@ -9,17 +8,57 @@ from brainfusion._gmm_correlation import nearest_neighbour_interp, fit_coordinat
 from brainfusion._utils import regular_grid_on_contour
 
 
-def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, datasets, contours, points, axes, filenames,
-                              bg_images, contour_interp_n=200, clustering='Mean', outline_averaging='star_domain',
-                              pullback=False, smooth='auto', curvature=0.5, **kwargs):
+def brain_fusion(template, grids, image_dims, scales, datasets, contours, points, axes, filenames,
+                 bg_images, contour_interp_n=200, clustering='Mean', outline_averaging='star_domain',
+                 pullback=False, smooth='auto', curvature=0.5, fit_routine='ellipse', **kwargs):
+
+    template_grid, measurement_grids, template_dataset, measurement_datasets, template_contours, measurement_contours, affine_matrices = (
+        fuse_boundaries(template, grids, datasets, contours, points, axes, contour_interp_n=contour_interp_n,
+                        outline_averaging=outline_averaging, curvature=curvature, fit_routine=fit_routine))
+
+    trafo_data_maps, trafo_grids, trafo_ver_grids, trafo_contours, verification_grids, extended_grid, extended_grid_shape = fuse_grids(
+        measurement_grids,
+        measurement_datasets,
+        template_contours, measurement_contours,
+        image_dims, pullback=pullback, smooth=smooth
+    )
+
+    avg_data = fuse_measurement_datasets(measurement_datasets, trafo_data_maps, trafo_grids, clustering=clustering)
+
+    # Creating the analysis dictionary
+    structured_data = {
+        'affine_matrices': affine_matrices,
+        'template_contours': template_contours,  # Template contours but matched to respective measurement contours!
+        'measurement_contours': measurement_contours,
+        'measurement_trafo_contours': trafo_contours,
+        'template_grid': template_grid,
+        'measurement_grids': measurement_grids,
+        'measurement_grids_shape': image_dims,
+        "scale_matrices": scales,
+        'verification_grids': verification_grids,
+        'measurement_trafo_grids': trafo_grids,
+        'verification_trafo_grids': trafo_ver_grids,
+        'measurement_interpolated_grid': extended_grid,
+        'measurement_interpolated_grid_shape': extended_grid_shape,
+        'template_dataset': template_dataset,
+        'measurement_datasets': measurement_datasets,
+        'measurement_trafo_datasets': trafo_data_maps,
+        'measurement_interpolated_dataset': avg_data,
+        'measurement_filenames': filenames,
+        'background_image': bg_images
+    }
+
+    return structured_data
+
+
+def fuse_boundaries(template, grids, datasets, contours, points, axes, contour_interp_n=200,
+                    outline_averaging='star_domain', curvature=0.5, fit_routine='ellipse', **kwargs):
     """
     Use this function to match tissue boundary outlines with measurement grids defined in an enclosed area. Boundaries
     can be matched using a given template or by calculating average tissue shape. The original measurement grids are
     then transformed to the template shape and together with the corresponding data averaged by interpolation to a
     regular grid or clustering using a Gaussian Mixture Model.
     """
-    print(f'Processing folder: {base_path}.')
-
     # Close all contours
     closed_contours = []
     for contour in contours:
@@ -39,7 +78,7 @@ def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, da
                                                                       rot_axes=axes,
                                                                       init_points=points,
                                                                       template_index=template_index,
-                                                                      fit_routine='ellipse')
+                                                                      fit_routine=fit_routine)
 
     if template == 'average':
         # Calculate average contour and add as first element in list
@@ -67,6 +106,11 @@ def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, da
     template_contours = dtw_template_contours[1:]
     measurement_contours = dtw_contours[1:]
 
+    return template_grid, measurement_grids, template_dataset, measurement_datasets, template_contours, measurement_contours, affine_matrices
+
+
+def fuse_grids(measurement_grids, measurement_datasets, template_contours, measurement_contours, image_dims,
+               pullback=False, smooth='auto', **kwargs):
     # Initialise grid to interpolate transformed data on
     extended_grid, extended_grid_shape = extend_grid(measurement_grids, 0.1, 0.1)
 
@@ -82,7 +126,7 @@ def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, da
             measurement_grids[index],
             verification_grids[index],
             smooth=smooth,
-            progress=f' {index + 1} out of {len(dtw_contours) - 1}')
+            progress=f' {index + 1} out of {len(measurement_contours)}')
 
         # Interpolate maps from deformed grids to common regular grid
         trafo_data = {}
@@ -115,14 +159,19 @@ def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, da
                 trafo_data[key] = interp_func(points_pulled)
         else:
             for key, data_map in measurement_datasets[index].items():
-                #trafo_data[key] = nearest_neighbour_interp(trafo_grid, data_map.ravel(), extended_grid, method='nearest', unique=False)
-                trafo_data[key] = griddata(points=trafo_grid, values=data_map.ravel(), xi=extended_grid, method='nearest')
+                trafo_data[key] = nearest_neighbour_interp(trafo_grid, data_map.ravel(), extended_grid,
+                                                           method='nearest', unique=False)
+                # trafo_data[key] = griddata(points=trafo_grid, values=data_map.ravel(), xi=extended_grid, method='nearest')  # ToDo: Remove old code
 
         trafo_data_maps.append(trafo_data)
         trafo_grids.append(trafo_grid)
         trafo_ver_grids.append(trafo_ver_grid)
         trafo_contours.append(trafo_contour)
 
+    return trafo_data_maps, trafo_grids, trafo_ver_grids, trafo_contours, verification_grids, extended_grid, extended_grid_shape
+
+
+def fuse_measurement_datasets(measurement_datasets, trafo_data_maps, trafo_grids, clustering='Mean'):
     # Average transformed datasets
     if clustering == 'GMM':
         # Cluster data points using Gaussian Mixture Model and average using median
@@ -146,37 +195,7 @@ def fuse_measurement_datasets(base_path, template, grids, image_dims, scales, da
             key: projection(np.array([d[key] for d in trafo_data_maps]), axis=0)
             for key in keys
         }
-    elif clustering == "None":
-        # Compute mean array for each key
-        keys = trafo_data_maps[0].keys()
-        avg_data = {
-            key: np.nanmedian(np.array([d[key] for d in trafo_data_maps]), axis=0)
-            for key in keys
-        }
     else:
         raise ValueError(f'Clustering option {clustering} is not implemented!')
 
-    # Creating the analysis dictionary
-    structured_data = {
-        'affine_matrices': affine_matrices,
-        'template_contours': template_contours,  # Template contours but matched to respective measurement contours!
-        'measurement_contours': measurement_contours,
-        'measurement_trafo_contours': trafo_contours,
-        'template_grid': template_grid,
-        'measurement_grids': measurement_grids,
-        'measurement_grids_shape': image_dims,
-        "scale_matrices": scales,
-        'verification_grids': verification_grids,
-        'measurement_trafo_grids': trafo_grids,
-        'verification_trafo_grids': trafo_ver_grids,
-        'measurement_interpolated_grid': extended_grid,
-        'measurement_interpolated_grid_shape': extended_grid_shape,
-        'template_dataset': template_dataset,
-        'measurement_datasets': measurement_datasets,
-        'measurement_trafo_datasets': trafo_data_maps,
-        'measurement_interpolated_dataset': avg_data,
-        'measurement_filenames': filenames,
-        'background_image': bg_images
-    }
-
-    return structured_data
+    return avg_data

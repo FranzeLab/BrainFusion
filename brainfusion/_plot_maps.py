@@ -238,7 +238,6 @@ def plot_transformed_grid(contour, template_contour, data, grid, trafo_grid, aff
         y_max = np.max(grid[:, :, 1])
         extent = [x_min, x_max, y_min, y_max]
 
-        # Plot
         axes[1].imshow(data[key_quant], extent=extent, origin='lower', cmap=cmap)
 
         # Transformed Grid

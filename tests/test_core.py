@@ -1,5 +1,5 @@
 import pytest
-import brainfusion  # ✅ Import your package
+import brainfusion
 
 
 def test_brainfusion_import():
