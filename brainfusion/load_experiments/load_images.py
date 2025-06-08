@@ -7,7 +7,6 @@ from brainfusion._io import get_roi_from_txt
 from brainfusion._utils import bin_single_image_channel, transform_outline_for_binning, apply_affine_transform
 
 
-
 def load_hcr_experiment(folder_path, key_point_filename="None", rot_axis_filename="None",
                         boundary_filename='brain_outline', sampling_size="None", **kwargs):
     """
@@ -181,13 +180,20 @@ def load_synapse_experiment(folder_path, key_point_filename="None", rot_axis_fil
                 if scale <= 0:
                     scaled = np.zeros_like(c, dtype=dtype)
                 else:
-                    scaled = c / scale * max_val
+                    # First scale to [0..1] range
+                    scaled = c / scale
 
-                # Optional clipping
-                if clip is True:
-                    scaled = np.clip(scaled, 0, max_val)
+                    if clip is False:
+                        # Values >1 → 1
+                        scaled = np.minimum(scaled, 1.0)
+                    else:
+                        # Values >1 → 0
+                        scaled[scaled > 1.0] = 0.0
 
-                # Convert to final integer type and store back
+                    # Now scale to full bit depth
+                    scaled = scaled * max_val
+
+                # Final integer conversion
                 channels[key] = scaled.astype(dtype)
 
         # Transform coordinates from image to micro meter
@@ -232,16 +238,14 @@ def load_synapse_experiment(folder_path, key_point_filename="None", rot_axis_fil
     else:
         tif_axes = [None] * len(tif_contours)
 
-    bg_image = "None"
-
     results = {"grids": tif_grids,
-               "image_dims": tif_grids_dims,
+               "reg_grid_dims": tif_grids_dims,
                "scales": scale_matrices,
                "datasets": tif_datasets,
                "contours": tif_contours,
                "points": tif_keypoints,
                "axes": tif_axes,
                "filenames": filenames,
-               "bg_images": bg_image}
+               "bg_images": "None"}
 
     return results

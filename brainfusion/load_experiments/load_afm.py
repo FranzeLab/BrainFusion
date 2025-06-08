@@ -9,7 +9,7 @@ from brainfusion._io import read_parquet_file, get_roi_from_txt
 from brainfusion._utils import apply_affine_transform
 
 
-def load_batchforce_all(base_path, afm_variables, data_filename, key_point_filename, rot_axis_filename,
+def load_batchforce_all(base_path, afm_variables, batchforce_filename, key_point_filename, rot_axis_filename,
                         grid_conv_filename, boundary_filename, **kwargs):
     """
     Load multiple batchforce experiments in a directory.
@@ -22,7 +22,7 @@ def load_batchforce_all(base_path, afm_variables, data_filename, key_point_filen
             grid, scale_matrix, dataset, contour, point, axis, background_image = load_batchforce_single(
                 folder_path,
                 afm_variables=afm_variables,
-                data_filename=data_filename,
+                batchforce_filename=batchforce_filename,
                 key_point_filename=key_point_filename,
                 rot_axis_filename=rot_axis_filename,
                 grid_conv_filename=grid_conv_filename,
@@ -39,7 +39,7 @@ def load_batchforce_all(base_path, afm_variables, data_filename, key_point_filen
             bg_images_list.append(background_image)
 
     results = {"grids": grids,
-               "image_dims": "None",
+               "reg_grid_dims": "None",
                "scales": scale_matrices,
                "datasets": datasets,
                "contours": contours,
@@ -51,18 +51,18 @@ def load_batchforce_all(base_path, afm_variables, data_filename, key_point_filen
     return results
 
 
-def load_batchforce_single(folder_path, afm_variables, data_filename='data.csv', key_point_filename="None",
+def load_batchforce_single(folder_path, afm_variables, batchforce_filename='data.csv', key_point_filename="None",
                            rot_axis_filename="None", grid_conv_filename='GridInversionMatrix.csv',
                            boundary_filename='brain_outline', stage_image_angle=-90):
     """
     Load an AFM experiment analysed with the batchforce Matlab library and the outline coordinates.
     """
     # Load the AFM analysis file
-    data_path = os.path.join(folder_path, 'region analysis', data_filename)
+    data_path = os.path.join(folder_path, 'region analysis', batchforce_filename)
     assert os.path.exists(data_path), f'The given path does not point to a AFM analysis file: {data_path}'
 
     # Get filetype extension
-    extension = os.path.splitext(data_filename)[1]
+    extension = os.path.splitext(batchforce_filename)[1]
     if extension == '.mat':
         raise ValueError(f"Importing {extension} files is not implemented yet, use writetable(data, 'data.csv') in Matlab")
     elif extension == '.csv':
@@ -79,7 +79,7 @@ def load_batchforce_single(folder_path, afm_variables, data_filename='data.csv',
     assert os.path.exists(grid_vars_path), f'The given path does not point to a grid conversion variables file: {grid_vars_path}'
 
     # Get filetype extension
-    extension = os.path.splitext(data_filename)[1]
+    extension = os.path.splitext(batchforce_filename)[1]
     if extension == '.mat':
         raise ValueError(f"Importing {extension} files is not implemented yet, use writematrix([M [r; s]; 0 0 1],"
                          f"'GridInversionMatrix.csv') in Matlab to save full 3x3 conversion matrix")

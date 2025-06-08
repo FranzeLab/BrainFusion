@@ -5,11 +5,12 @@ from brainfusion.load_experiments.load_images import load_hcr_experiment, load_s
 from brainfusion._gmm_correlation import (fit_coordinates_gmm, bin_and_correlate, afm_brillouin_transformation,
                                           correlate_afm_myelin)
 from brainfusion._match_contours import interpolate_contour, align_contours
-from brainfusion._plot_maps import plot_brainfusion_results, plot_correlation_with_radii
+from brainfusion._plot_maps import plot_brainfusion_results, plot_correlation_with_radii, plot_correlation_masks
 from brainfusion._transform_2Dmap import transform_grid2contour, extend_grid
 from brainfusion._io import read_parquet_file, append_parquet_file, export_analysis, import_analysis, check_parameters
 from brainfusion._utils import mask_contour
-from brainfusion.brainfusion import brain_fusion, fuse_boundaries, fuse_grids, fuse_measurement_datasets
+from brainfusion.brainfusion import (brain_fusion, brain_fusion_correlation, fuse_boundaries, fuse_grids,
+                                     fuse_measurement_datasets)
 
 __all__ = [
     "load_batchforce_all",
@@ -19,6 +20,7 @@ __all__ = [
     "load_synapse_experiment",
     "plot_brainfusion_results",
     "plot_correlation_with_radii",
+    "plot_correlation_masks",
     "export_analysis",
     "import_analysis",
     "check_parameters",
@@ -26,6 +28,7 @@ __all__ = [
     "correlate_afm_myelin",
     "mask_contour",
     "brain_fusion",
+    "brain_fusion_correlation",
     "fuse_boundaries",
     "fuse_grids",
     "fuse_measurement_datasets"

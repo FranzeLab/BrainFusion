@@ -29,6 +29,7 @@ def transform_grid2contour(original_contour, deformed_contour, original_grid, te
 
 
 # ToDo: Implement new interpolation function scipy.interpolate.RBFInterpolator
+# ToDo: Implement smooth bijective transformation to quickly invert for faster interpolation to regular grid
 def create_rbf_interpolators(original_contour, deformed_contour, function='linear', smooth='auto'):
     if smooth == "auto":
         D = distance_matrix(original_contour, original_contour)

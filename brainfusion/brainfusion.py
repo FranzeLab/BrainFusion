@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
 
 from brainfusion._match_contours import interpolate_contour, align_contours, boundary_match_contours
 from brainfusion._average_contours import find_average_contour
@@ -8,38 +7,55 @@ from brainfusion._gmm_correlation import nearest_neighbour_interp, fit_coordinat
 from brainfusion._utils import regular_grid_on_contour
 
 
-def brain_fusion(template, grids, image_dims, scales, datasets, contours, points, axes, filenames,
-                 bg_images, contour_interp_n=200, clustering='Mean', outline_averaging='star_domain',
-                 pullback=False, smooth='auto', curvature=0.5, fit_routine='ellipse', **kwargs):
+def brain_fusion(grids, datasets, contours, scales, contour_template="average", reg_grid_dims="None", points="None",
+                 axes="None", filenames="None", bg_images="None", contour_interp_n=200, clustering='Mean',
+                 outline_averaging='star_domain', smooth='auto', curvature=0.5, fit_routine='ellipse', **kwargs):
+    """
+    Use this function to match tissue boundary outlines with measurement grids defined in an enclosed area. Boundaries
+    can be matched using a given template or by calculating average tissue shape. The original measurement grids are
+    then transformed to the template shape and together with the corresponding data averaged by interpolation to a
+    regular grid or clustering using a Gaussian Mixture Model.
+    """
 
-    template_grid, measurement_grids, template_dataset, measurement_datasets, template_contours, measurement_contours, affine_matrices = (
-        fuse_boundaries(template, grids, datasets, contours, points, axes, contour_interp_n=contour_interp_n,
-                        outline_averaging=outline_averaging, curvature=curvature, fit_routine=fit_routine))
+    print("Starting brainfusion analysis.")
 
-    trafo_data_maps, trafo_grids, trafo_ver_grids, trafo_contours, verification_grids, extended_grid, extended_grid_shape = fuse_grids(
-        measurement_grids,
-        measurement_datasets,
-        template_contours, measurement_contours,
-        image_dims, pullback=pullback, smooth=smooth
+    # Part I: Affine alignment of contours and subsequent boundary matching
+    aligned_grids, datasets, dtw_contours, dtw_template_contours, affine_matrices = (
+        fuse_boundaries(contour_template, grids, datasets, contours, points, axes, contour_interp_n=contour_interp_n,
+                        outline_averaging=outline_averaging, curvature=curvature, fit_routine=fit_routine)
     )
 
+    # Split template data from rest
+    template_grid, measurement_grids = aligned_grids[0], aligned_grids[1:]
+    template_dataset, measurement_datasets = datasets[0], datasets[1:]
+    template_contours, measurement_contours = dtw_template_contours[1:], dtw_contours[1:]
+
+    # Part II: Coordinate plane warping based on contour matching
+    # Initialise grid to interpolate transformed data on
+    ext_grid, ext_grid_shape = extend_grid(measurement_grids, 0.05, 0.05)
+    trafo_data_maps, trafo_grids, trafo_ver_grids, verification_grids, trafo_contours = (
+        fuse_grids(measurement_grids, ext_grid, measurement_datasets, template_contours, measurement_contours,
+                   smooth=smooth)
+    )
+
+    # Part III: Averaging across multiple datasets in transformed space
     avg_data = fuse_measurement_datasets(measurement_datasets, trafo_data_maps, trafo_grids, clustering=clustering)
 
-    # Creating the analysis dictionary
+    # Create analysis dictionary for export to .h5 file
     structured_data = {
         'affine_matrices': affine_matrices,
-        'template_contours': template_contours,  # Template contours but matched to respective measurement contours!
+        "scale_matrices": scales,
+        'template_contours': template_contours,
         'measurement_contours': measurement_contours,
         'measurement_trafo_contours': trafo_contours,
         'template_grid': template_grid,
         'measurement_grids': measurement_grids,
-        'measurement_grids_shape': image_dims,
-        "scale_matrices": scales,
+        'measurement_grids_shape': reg_grid_dims,
         'verification_grids': verification_grids,
         'measurement_trafo_grids': trafo_grids,
         'verification_trafo_grids': trafo_ver_grids,
-        'measurement_interpolated_grid': extended_grid,
-        'measurement_interpolated_grid_shape': extended_grid_shape,
+        'measurement_interpolated_grid': ext_grid,
+        'measurement_interpolated_grid_shape': ext_grid_shape,
         'template_dataset': template_dataset,
         'measurement_datasets': measurement_datasets,
         'measurement_trafo_datasets': trafo_data_maps,
@@ -51,14 +67,74 @@ def brain_fusion(template, grids, image_dims, scales, datasets, contours, points
     return structured_data
 
 
+def brain_fusion_correlation(grids, datasets, contours, scales, contour_template="average", reg_grid_dims="None",
+                             points="None", axes="None", filenames="None", bg_images="None", contour_interp_n=200,
+                             clustering='Mean', outline_averaging='star_domain', smooth='auto', curvature=0.5,
+                             fit_routine='ellipse', **kwargs):
+    print("Starting correlation analysis.")
+
+    # Part I: Affine alignment of contours and subsequent boundary matching
+    aligned_grids, datasets, dtw_contours, dtw_template_contours, affine_matrices = (
+        fuse_boundaries(contour_template, grids, datasets, contours, points, axes, contour_interp_n=contour_interp_n,
+                        outline_averaging=outline_averaging, curvature=curvature, fit_routine=fit_routine)
+    )
+
+    # Split template data from rest
+    template_grid, measurement_grids = aligned_grids[0], aligned_grids[1:]
+    template_dataset, measurement_datasets = datasets[0], datasets[1:]
+    template_contours, measurement_contours = dtw_template_contours[1:], dtw_contours[1:]
+
+    # Part II: Coordinate plane warping based on contour matching
+    # Initialise individual grids to interpolate transformed data on
+    ext_grids, ext_grids_shape, trafo_data_maps, trafo_grids = [], [], [], []
+    trafo_ver_grids, verification_grids, trafo_contours = [], [], []
+    for index, contour in enumerate(measurement_contours):
+        ext_grid, ext_grid_shape = extend_grid([measurement_grids[index]], 0.05, 0.05)
+
+        trafo_data_map, trafo_grid, trafo_ver_grid, verification_grid, trafo_contour = (
+            fuse_grids([measurement_grids[index]],
+                       ext_grid,
+                       [measurement_datasets[index]],
+                       [template_contours[index]],
+                       [measurement_contours[index]],
+                       smooth=smooth)
+        )
+
+        ext_grids.append(ext_grid)
+        ext_grids_shape.append(np.array(ext_grid_shape))
+        trafo_data_maps.extend(trafo_data_map)
+        trafo_grids.extend(trafo_grid)
+        trafo_ver_grids.extend(trafo_ver_grid)
+        verification_grids.extend(verification_grid)
+        trafo_contours.extend(trafo_contour)
+
+    # Create analysis dictionary for export to .h5 file
+    structured_data = {
+        'affine_matrices': affine_matrices,
+        "scale_matrices": scales,
+        'template_contours': template_contours,
+        'measurement_contours': measurement_contours,
+        'measurement_trafo_contours': trafo_contours,
+        'template_grid': template_grid,
+        'measurement_grids': measurement_grids,
+        'measurement_grids_shape': reg_grid_dims,
+        'verification_grids': verification_grids,
+        'measurement_trafo_grids': trafo_grids,
+        'verification_trafo_grids': trafo_ver_grids,
+        'measurement_interpolated_grid': ext_grids,
+        'measurement_interpolated_grid_shape': ext_grids_shape,
+        'template_dataset': template_dataset,
+        'measurement_datasets': measurement_datasets,
+        'measurement_trafo_datasets': trafo_data_maps,
+        'measurement_filenames': filenames,
+        'background_image': bg_images
+    }
+
+    return structured_data
+
+
 def fuse_boundaries(template, grids, datasets, contours, points, axes, contour_interp_n=200,
                     outline_averaging='star_domain', curvature=0.5, fit_routine='ellipse', **kwargs):
-    """
-    Use this function to match tissue boundary outlines with measurement grids defined in an enclosed area. Boundaries
-    can be matched using a given template or by calculating average tissue shape. The original measurement grids are
-    then transformed to the template shape and together with the corresponding data averaged by interpolation to a
-    regular grid or clustering using a Gaussian Mixture Model.
-    """
     # Close all contours
     closed_contours = []
     for contour in contours:
@@ -82,8 +158,10 @@ def fuse_boundaries(template, grids, datasets, contours, points, axes, contour_i
 
     if template == 'average':
         # Calculate average contour and add as first element in list
-        template_contour, errors = find_average_contour(aligned_contours, average=outline_averaging,
-                                                        star_bins=contour_interp_n, error_metric='frechet')
+        template_contour, errors = find_average_contour(aligned_contours,
+                                                        average=outline_averaging,
+                                                        star_bins=contour_interp_n,
+                                                        error_metric='frechet')
         aligned_contours.insert(template_index, template_contour)
         aligned_grids.insert(template_index, np.empty((1, 2)))
         datasets.insert(template_index, np.empty((1, 2)))
@@ -93,27 +171,16 @@ def fuse_boundaries(template, grids, datasets, contours, points, axes, contour_i
         raise ValueError(f'Choice of template: {template} is not implemented!')
 
     # Match boundaries using DTW
-    dtw_contours, dtw_template_contours = boundary_match_contours(aligned_contours, template_index=template_index,
+    dtw_contours, dtw_template_contours = boundary_match_contours(aligned_contours,
+                                                                  template_index=template_index,
                                                                   curvature=curvature)
 
-    # Split template data from rest
-    template_grid = aligned_grids[0]
-    measurement_grids = aligned_grids[1:]
-
-    template_dataset = datasets[0]
-    measurement_datasets = datasets[1:]
-
-    template_contours = dtw_template_contours[1:]
-    measurement_contours = dtw_contours[1:]
-
-    return template_grid, measurement_grids, template_dataset, measurement_datasets, template_contours, measurement_contours, affine_matrices
+    return aligned_grids, datasets, dtw_contours, dtw_template_contours, affine_matrices
 
 
-def fuse_grids(measurement_grids, measurement_datasets, template_contours, measurement_contours, image_dims,
-               pullback=False, smooth='auto', **kwargs):
-    # Initialise grid to interpolate transformed data on
-    extended_grid, extended_grid_shape = extend_grid(measurement_grids, 0.1, 0.1)
-
+def fuse_grids(measurement_grids, ext_grid, measurement_datasets, template_contours, measurement_contours,
+               smooth='auto',
+               **kwargs):
     # Create regular test grids for verifying correct transformation
     verification_grids = [regular_grid_on_contour(c) for c in measurement_contours]
 
@@ -131,44 +198,18 @@ def fuse_grids(measurement_grids, measurement_datasets, template_contours, measu
         # Interpolate maps from deformed grids to common regular grid
         trafo_data = {}
 
-        if pullback is True:  # Faster interpolation but introduces some heavy errors
-            # Pull back extended grid to definition space
-            x_pull = rbf_x_inv(extended_grid[:, 0], extended_grid[:, 1])
-            y_pull = rbf_y_inv(extended_grid[:, 0], extended_grid[:, 1])
-            points_pulled = np.vstack([y_pull, x_pull]).T  # (y, x) for RegularGridInterpolator
-
-            # Extract unique axes from measurement grid
-            measurement_reg = (measurement_grids[index].reshape(image_dims[index][0], image_dims[index][1], 2))
-            x_axis = measurement_reg[0, :, 0]
-            y_axis = measurement_reg[:, 0, 1]
-
-            for key, data_map in measurement_datasets[index].items():
-                # Reshape data map to 2D grid (y rows, x cols)
-                data_reg = data_map.reshape(image_dims[index][0], image_dims[index][1])
-
-                # Create interpolator
-                interp_func = RegularGridInterpolator(
-                    (y_axis, x_axis),  # note the tuple of coordinate arrays
-                    data_reg,
-                    method='linear',
-                    bounds_error=True,
-                    fill_value=np.nan
-                )
-
-                # Interpolate pulled-back points
-                trafo_data[key] = interp_func(points_pulled)
-        else:
-            for key, data_map in measurement_datasets[index].items():
-                trafo_data[key] = nearest_neighbour_interp(trafo_grid, data_map.ravel(), extended_grid,
-                                                           method='nearest', unique=False)
-                # trafo_data[key] = griddata(points=trafo_grid, values=data_map.ravel(), xi=extended_grid, method='nearest')  # ToDo: Remove old code
+        for key, data_map in measurement_datasets[index].items():
+            trafo_data[key] = nearest_neighbour_interp(trafo_grid,
+                                                       data_map.ravel(),
+                                                       ext_grid,
+                                                       unique=False)
 
         trafo_data_maps.append(trafo_data)
         trafo_grids.append(trafo_grid)
         trafo_ver_grids.append(trafo_ver_grid)
         trafo_contours.append(trafo_contour)
 
-    return trafo_data_maps, trafo_grids, trafo_ver_grids, trafo_contours, verification_grids, extended_grid, extended_grid_shape
+    return trafo_data_maps, trafo_grids, trafo_ver_grids, verification_grids, trafo_contours
 
 
 def fuse_measurement_datasets(measurement_datasets, trafo_data_maps, trafo_grids, clustering='Mean'):

@@ -3,24 +3,19 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
-import datashader as ds
-import datashader.transfer_functions as tf
-import pandas as pd
 from scipy.optimize import curve_fit
 from scipy.stats import f
-from pathlib import Path
 from tifffile import imwrite
 from skimage.transform import AffineTransform
 
-from brainfusion._utils import mask_contour, map_values_to_grid
-from brainfusion._transform_2Dmap import transform_grid2contour, extend_grid
+from brainfusion._utils import mask_contour
 
 plt.rcParams['svg.fonttype'] = 'none'
 
 
 def plot_brainfusion_results(analysis_file, results_folder, key_quant, image_dataset=False, cbar_label='', cmap='afmhot',
                              marker_size=20, mask=True, vmin=None, vmax=None, verify_trafo=False, plot_background=False,
-                             **kwargs):
+                             correlation=False, **kwargs):
     print(f'Plotting: {os.path.basename(os.path.dirname(results_folder))}.')
     os.makedirs(results_folder, exist_ok=True)
 
@@ -40,7 +35,7 @@ def plot_brainfusion_results(analysis_file, results_folder, key_quant, image_dat
     # Get extended interpolation grid
     interpolated_grid = analysis_file["measurement_interpolated_grid"]
     interpolated_grid_shape = tuple(analysis_file["measurement_interpolated_grid_shape"])
-    interpolated_avg_data = analysis_file['measurement_interpolated_dataset'][key_quant]
+    interpolated_avg_data = analysis_file['measurement_interpolated_dataset'][key_quant] if not correlation else None
 
     # Transform into regular grid and matrix if image data
     if image_dataset:
@@ -117,43 +112,44 @@ def plot_brainfusion_results(analysis_file, results_folder, key_quant, image_dat
             fig.savefig(output_path, dpi=300, bbox_inches='tight')
             plt.close()
 
-    #--- Plot averaged data map ---#
-    fig = plot_average_map(interpolated_avg_data,
-                           interpolated_grid,
-                           template_contour,
-                           cbar_label=cbar_label,
-                           cmap=cmap,
-                           marker_size=marker_size,
-                           vmin=vmin,
-                           vmax=vmax,
-                           mask=mask)
-    output_path = os.path.join(results_folder, f'Averaged_Maps.png')
-    fig.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    if not correlation:
+        #--- Plot averaged data map ---#
+        fig = plot_average_map(interpolated_avg_data,
+                               interpolated_grid,
+                               template_contour,
+                               cbar_label=cbar_label,
+                               cmap=cmap,
+                               marker_size=marker_size,
+                               vmin=vmin,
+                               vmax=vmax,
+                               mask=mask)
+        output_path = os.path.join(results_folder, f'Averaged_Maps.png')
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
 
-    # Save averaged data map as tif
-    H, W = tuple(analysis_file["measurement_interpolated_grid_shape"])
-    regular_grid = analysis_file['measurement_interpolated_grid'].reshape(H, W, 2)
-    value_matrix = analysis_file['measurement_interpolated_dataset'][key_quant].reshape(H, W)
+        # Save averaged data map as tif
+        H, W = tuple(analysis_file["measurement_interpolated_grid_shape"])
+        regular_grid = analysis_file['measurement_interpolated_grid'].reshape(H, W, 2)
+        value_matrix = analysis_file['measurement_interpolated_dataset'][key_quant].reshape(H, W)
 
-    # Save as .tif
-    matrix, _, (pixel_size_x, pixel_size_y) = plot_contour_on_image(value_matrix, regular_grid, template_contour, cmap='grey',
-                                                          mask=True)
-    matrix_to_save = np.flipud(matrix)  # Flip vertically to match origin='lower' in imshow
+        # Save as .tif
+        matrix, _, (pixel_size_x, pixel_size_y) = plot_contour_on_image(value_matrix, regular_grid, template_contour,
+                                                                        cmap='grey', mask=True)
+        matrix_to_save = np.flipud(matrix)  # Flip vertically to match origin='lower' in imshow
 
-    # Save cropped image
-    output_path = os.path.join(results_folder, f'Averaged_Maps_Image.tif')
-    imwrite(output_path,
-            matrix_to_save.astype('float32'),
-            imagej=True,
-            resolution=(1e-6 / pixel_size_x, 1e-6 / pixel_size_y),
-            metadata={
-                'unit': 'um',
-                'axes': 'YX'
-            }
-            )
+        # Save cropped image
+        output_path = os.path.join(results_folder, f'Averaged_Maps_Image.tif')
+        imwrite(output_path,
+                matrix_to_save.astype('float32'),
+                imagej=True,
+                resolution=(1e-6 / pixel_size_x, 1e-6 / pixel_size_y),
+                metadata={
+                    'unit': 'um',
+                    'axes': 'YX'
+                }
+                )
 
-    plt.close()
+        plt.close()
 
 
 def plot_contours(template_contour, matched_contours):
@@ -325,6 +321,7 @@ def plot_transformed_grid(contour, template_contour, data, grid, trafo_grid, aff
 def plot_average_map(data_avg, grid_avg, template_contour, cbar_label='', cmap='viridis', marker_size=15, vmin=None,
                      vmax=None, mask=True):
     # Compute vmin and vmax
+    data_avg = data_avg.astype(float)
     vmin = np.nanmin(data_avg) if vmin is None else vmin
     vmax = np.nanmax(data_avg) if vmax is None else vmax
 
@@ -387,6 +384,7 @@ def plot_contour_on_image(img, grid, contour, cmap='grey', mask=False):
     """
     Normalize a matrix to [0, max] and convert to uint8 or uint16 and add contour to image.
     """
+    img = img.astype(float)
     N, M = img.shape
     coords = grid.reshape(-1, 2)
 
@@ -686,25 +684,25 @@ def plot_cumulative(analysis_file, raw_key, projected=True, results_folder=None,
     plt.show()
 
 
-def plot_correlation_with_radii(afm_grid, myelin_grid, afm_contour, radii, title=""):
+def plot_correlation_with_radii(sparse_grid, dense_grid, contour, radii, results_folder=None, title=""):
     """
-    Plots AFM and myelin grids with circles of given radius around AFM points.
+    Plots sparse and dense grids with circles of given radius around sparse points.
     """
     # Create plot
     fig, ax = plt.subplots(figsize=(8, 8))
 
-    # Plot Myelin Points
-    ax.scatter(myelin_grid[:, 0], myelin_grid[:, 1], s=10, color='grey', label="Myelin Points", alpha=0.5)
+    # Plot dense Points
+    ax.scatter(dense_grid[:, 0], dense_grid[:, 1], s=10, color='grey', label="Dense Points", alpha=0.5)
 
-    # Plot AFM Points
-    ax.scatter(afm_grid[:, 0], afm_grid[:, 1], s=15, color='blue', label="AFM Points")
+    # Plot sparse Points
+    ax.scatter(sparse_grid[:, 0], sparse_grid[:, 1], s=15, color='blue', label="Sparse Points")
 
-    # Plot AFM Contour (Black Line)
-    ax.plot(afm_contour[:, 0], afm_contour[:, 1], 'k-', linewidth=2, label="AFM Contour")
+    # Plot contour
+    ax.plot(contour[:, 0], contour[:, 1], 'k-', linewidth=2, label="Contour")
 
-    # Draw Circles Around AFM Points
-    for i, afm_point in enumerate(afm_grid):
-        circle = patches.Circle(afm_point, radii[i], color='blue', alpha=0.2)
+    # Draw Circles Around sparse Points
+    for i, sparse_point in enumerate(sparse_grid):
+        circle = patches.Circle(sparse_point, radii[i], color='blue', alpha=0.2)
         ax.add_patch(circle)
 
     # Labels and Legend
@@ -713,6 +711,64 @@ def plot_correlation_with_radii(afm_grid, myelin_grid, afm_contour, radii, title
     ax.set_title(title, fontsize=18)
     # ax.legend(loc="lower left", fontsize=15)
     ax.set_aspect('equal')
+
+    if isinstance(results_folder, str):
+        save_path = os.path.join(results_folder, f'CorrelationAnalysis.png')
+        os.makedirs(results_folder, exist_ok=True)
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.show()
+
+    return fig
+
+
+def plot_correlation_masks(sparse_grid, sparse_data, dense_data, contour, results_folder=None):
+    """
+    Plots sparse and dense grids next to each other with color-coded values.
+    Supports boolean or numeric data.
+    """
+    fig, axs = plt.subplots(1, 2, figsize=(16, 8))
+
+    # Detect if data is boolean
+    is_sparse_bool = sparse_data.dtype == bool or np.array_equal(sparse_data, sparse_data.astype(bool))
+    is_dense_bool = dense_data.dtype == bool or np.array_equal(dense_data, dense_data.astype(bool))
+
+    # Define discrete colormap for booleans
+    bool_cmap = mcolors.ListedColormap(['black', 'red'])
+    bool_norm = mcolors.BoundaryNorm([-.5, 0.5, 1.5], bool_cmap.N)
+
+    # Sparse points
+    if is_sparse_bool:
+        sc1 = axs[0].scatter(sparse_grid[:, 0], sparse_grid[:, 1], c=sparse_data.astype(int),
+                             cmap=bool_cmap, norm=bool_norm, s=100, marker='s')
+    else:
+        sc1 = axs[0].scatter(sparse_grid[:, 0], sparse_grid[:, 1], c=sparse_data, cmap='grey', s=100, marker='s')
+        plt.colorbar(sc1, ax=axs[0], orientation='vertical', label='Value')
+
+    axs[0].plot(contour[:, 0], contour[:, 1], 'k-', linewidth=2, label="Contour")
+    axs[0].set_title("Sparse Data")
+    axs[0].set_aspect('equal')
+    axs[0].set_xticks([])
+    axs[0].set_yticks([])
+
+    # Dense points
+    if is_dense_bool:
+        sc2 = axs[1].scatter(sparse_grid[:, 0], sparse_grid[:, 1], c=dense_data.astype(int),
+                             cmap=bool_cmap, norm=bool_norm, s=100, marker='s')
+    else:
+        sc2 = axs[1].scatter(sparse_grid[:, 0], sparse_grid[:, 1], c=dense_data, cmap='hot', s=100, marker='s')
+        plt.colorbar(sc2, ax=axs[1], orientation='vertical', label='Value')
+
+    axs[1].plot(contour[:, 0], contour[:, 1], 'k-', linewidth=2, label="Contour")
+    axs[1].set_title("Dense Data")
+    axs[1].set_aspect('equal')
+    axs[1].set_xticks([])
+    axs[1].set_yticks([])
+
+    if results_folder:
+        import os
+        os.makedirs(results_folder, exist_ok=True)
+        save_path = os.path.join(results_folder, "correlation_masks.png")
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
 
     plt.show()
     return fig

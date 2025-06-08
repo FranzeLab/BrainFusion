@@ -48,7 +48,7 @@ def export_analysis(path, analysis, params):
 
         # Save parameters as attributes
         for key, value in params.items():
-            if key == 'load_experiment_func':
+            if key == 'load_experiment_func' or key == 'overwrite_analysis':
                 continue
 
             h5file.attrs[key] = value
