@@ -1,6 +1,6 @@
-name: Install Brainfusion Package in Virtual Conda Environment
+name: "CI: Install, Lint, Test, and Upload Coverage"
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build-linux:
@@ -9,34 +9,47 @@ jobs:
       max-parallel: 5
 
     steps:
-    - uses: actions/checkout@v4
+    - name: "Checkout repo"
+      uses: actions/checkout@v4
 
-    - name: Add conda to system path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
+    - name: "Set up Conda"
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-activate-base: false
+        environment-file: environment.yml
+        environment-name: brainfusion-env
+        python-version: 3.12
 
-    - name: Install dependencies
+    - name: "Install brainfusion and test dependencies"
+      shell: bash -l {0}
       run: |
-        conda env create --file environment.yml
-        source activate brainfusion-env
-        pip install .
+        conda activate brainfusion-env
+        pip install -e .[dev]
+        pip install pytest pytest-cov codecov
 
-    - name: Debug Installed Packages
+    - name: "Debug: Show installed packages"
+      shell: bash -l {0}
       run: |
-        source activate brainfusion-env
+        conda activate brainfusion-env
         pip list
 
-    - name: Lint with flake8
+    - name: "Lint with flake8"
+      shell: bash -l {0}
       run: |
-        conda install flake8
-        # stop the build if there are Python syntax errors or undefined names
+        conda activate brainfusion-env
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Test with pytest
+    - name: "Run tests with coverage"
+      shell: bash -l {0}
       run: |
-        source activate brainfusion-env
-        conda install pytest
-        pytest
+        conda activate brainfusion-env
+        pytest --cov=brainfusion --cov-report=xml
+
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}  # Only needed for private repos
+        files: ./coverage.xml
+        flags: unittests
+        name: codecov-ubuntu
