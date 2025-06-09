@@ -1,12 +1,11 @@
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 import pandas as pd
 import re
+from skimage.transform import AffineTransform, estimate_transform
 from brainfusion._io import read_parquet_file, get_roi_from_txt
-from brainfusion._utils import apply_affine_transform
 
 
 def load_batchforce_all(base_path, afm_variables, batchforce_filename, key_point_filename, rot_axis_filename,
@@ -71,10 +70,10 @@ def load_batchforce_single(folder_path, afm_variables, batchforce_filename='data
     else:
         raise ValueError(f"{extension} files containing AFM analysis data are not supported!")
 
-    # Extract grid coordinates
+    # Extract image coordinates
     afm_grid = np.stack((np.array(data['x_image']), np.array(data['y_image'])), axis=-1)
 
-    # Load transformation matrix to scale to µm
+    # Load transformation matrix to scale to stage coordinates (to µm)
     grid_vars_path = os.path.join(folder_path, grid_conv_filename)
     assert os.path.exists(grid_vars_path), f'The given path does not point to a grid conversion variables file: {grid_vars_path}'
 
@@ -86,17 +85,19 @@ def load_batchforce_single(folder_path, afm_variables, batchforce_filename='data
     elif extension == '.csv':
         df = pd.read_csv(grid_vars_path, header=None, sep=',')
         afm_scale_matrix = df.to_numpy()  # Transforms from stage coordinates to image coordinates
-        # Image and stage are rotated by 90 degrees
-        theta = np.radians(stage_image_angle)
-        rotation_matrix = np.array([
-            [np.cos(theta), -np.sin(theta), 0],
-            [np.sin(theta), np.cos(theta), 0],
-            [0, 0, 1]
-        ])
-        afm_scale_matrix = afm_scale_matrix @ rotation_matrix
-
     else:
-        raise ValueError(f"{extension} files containing AFM analysis data are not supported!")
+        print(f"{extension} files containing AFM analysis data are not supported! Estimating transformation matrix.")
+        afm_grid_stage = np.stack((np.array(data['x']), np.array(data['y'])), axis=-1)
+        afm_scale_matrix = estimate_transform('affine', afm_grid_stage, afm_grid).params
+
+    # Rotate stage coordinates to preserves the grid orientation in relation to image
+    theta = np.radians(stage_image_angle)
+    rotation_matrix = np.array([
+        [np.cos(theta), -np.sin(theta), 0],
+        [np.sin(theta), np.cos(theta), 0],
+        [0, 0, 1]
+    ])
+    afm_scale_matrix = afm_scale_matrix @ rotation_matrix
 
     # Load background image
     img_path = os.path.join(folder_path, 'Pics', 'calibration', 'overview.tif')
@@ -125,14 +126,15 @@ def load_batchforce_single(folder_path, afm_variables, batchforce_filename='data
                          f"Make sure filename is of type: '<boundary_filename>_OriRight.txt' or"
                          f" '<boundary_filename>_OriLeft.txt'")
 
-    # Implement code to retrive points and axes
+    # ToDo: Implement
     point = None
     axis = None
 
     # Transform coordinates from image to micro meter
     inv_matrix = np.linalg.inv(afm_scale_matrix)
-    afm_grid = apply_affine_transform(afm_grid, inv_matrix)  # ToDo: Easier with a = AffineTransform(matrix=inv_matrix) & afm_grid = a(afm_grid)
-    contour = apply_affine_transform(contour, inv_matrix)
+    aff = AffineTransform(matrix=inv_matrix)
+    afm_grid = aff(afm_grid)
+    contour = aff(contour)
 
     return afm_grid, afm_scale_matrix, afm_data, contour, point, axis, img
 

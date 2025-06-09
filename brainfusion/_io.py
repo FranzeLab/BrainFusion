@@ -11,9 +11,7 @@ def check_parameters(params_defined, params_loaded):
     differences = {}
 
     for key, value in params_defined.items():
-        if key == 'load_experiment_func':
-            continue
-        elif key in params_loaded:
+        if key in params_loaded:
             loaded_value = params_loaded[key]
 
             # Handle lists separately to compare their content rather than object identity
@@ -48,7 +46,7 @@ def export_analysis(path, analysis, params):
 
         # Save parameters as attributes
         for key, value in params.items():
-            if key == 'load_experiment_func' or key == 'overwrite_analysis':
+            if key == 'overwrite_analysis':
                 continue
 
             h5file.attrs[key] = value

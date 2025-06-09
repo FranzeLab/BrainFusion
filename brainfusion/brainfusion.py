@@ -3,18 +3,71 @@ import numpy as np
 from brainfusion._match_contours import interpolate_contour, align_contours, boundary_match_contours
 from brainfusion._average_contours import find_average_contour
 from brainfusion._transform_2Dmap import extend_grid, transform_grid2contour
-from brainfusion._gmm_correlation import nearest_neighbour_interp, fit_coordinates_gmm
-from brainfusion._utils import regular_grid_on_contour
+from brainfusion._interpolation import nearest_neighbour_interp, fit_coordinates_gmm
+from brainfusion._utils import regular_grid_on_bbox
 
 
 def brain_fusion(grids, datasets, contours, scales, contour_template="average", reg_grid_dims="None", points="None",
                  axes="None", filenames="None", bg_images="None", contour_interp_n=200, clustering='Mean',
                  outline_averaging='star_domain', smooth='auto', curvature=0.5, fit_routine='ellipse', **kwargs):
     """
-    Use this function to match tissue boundary outlines with measurement grids defined in an enclosed area. Boundaries
-    can be matched using a given template or by calculating average tissue shape. The original measurement grids are
-    then transformed to the template shape and together with the corresponding data averaged by interpolation to a
-    regular grid or clustering using a Gaussian Mixture Model.
+    Perform contour-based alignment, deformation, and interpolation of spatial datasets for averaging.
+
+    This function aligns user-defined tissue boundaries (contours) and measurement grids using affine and
+    non-rigid transformations. Each dataset is warped to match a common template shape, and the data are
+    interpolated onto a regular grid or averaged using clustering (e.g., GMM). The result is a spatially
+    standardised representation suitable for comparing biological measurements across samples.
+
+    Parameters
+    ----------
+    grids : list of np.ndarray
+        List of 2D coordinate arrays (shape Nx2) representing original measurement grids.
+    datasets : list of dict
+        Each dictionary contains measurement maps (e.g. fluorescence, force) corresponding to a grid.
+    contours : list of np.ndarray
+        List of 2D arrays (shape Nx2) representing the outer boundaries of each sample.
+    scales : list
+        Scaling factors or shape information associated with each measurement grid (used in visualisation/export).
+    contour_template : str, default="average"
+        Method for choosing the reference contour. Options: "average", "first_element".
+    reg_grid_dims : str or list, default="None"
+        Shape of original regular grids (can be inferred or passed explicitly).
+    points : str or list, default="None"
+        Optional landmarks for affine alignment.
+    axes : str or list, default="None"
+        Optional rotation axes used for initial alignment.
+    filenames : list, default="None"
+        Filenames corresponding to the original input data (used for labelling/output).
+    bg_images : list, default="None"
+        Background images associated with each sample (for visual reference).
+    contour_interp_n : int, default=200
+        Number of points to interpolate each contour to before alignment.
+    clustering : str, default='Mean'
+        Averaging method across transformed datasets. Options: "Mean", "Median", "Sum", "GMM".
+    outline_averaging : str, default='star_domain'
+        Method used to average contours when template is "average".
+    smooth : float or 'auto', default='auto'
+        RBF interpolation smoothing factor for non-rigid transformation.
+    curvature : float, default=0.5
+        DTW matching penalty for curvature deviation in boundary alignment.
+    fit_routine : str, default='ellipse'
+        Method for initial affine contour alignment. Options: "ellipse", "PCA", etc.
+
+    Returns
+    -------
+    structured_data : dict
+        Dictionary containing all intermediate and final results, including:
+        - aligned and matched contours
+        - original and transformed measurement grids
+        - warped measurement datasets
+        - averaged dataset on interpolated grid
+        - affine transformation matrices
+        - background and metadata references
+
+    Notes
+    -----
+    This function is designed to integrate biological measurements across spatially variable samples.
+    It is especially useful for microscopy-based tissue studies with annotated outlines and measurement maps.
     """
 
     print("Starting brainfusion analysis.")
@@ -182,12 +235,12 @@ def fuse_grids(measurement_grids, ext_grid, measurement_datasets, template_conto
                smooth='auto',
                **kwargs):
     # Create regular test grids for verifying correct transformation
-    verification_grids = [regular_grid_on_contour(c) for c in measurement_contours]
+    verification_grids = [regular_grid_on_bbox(c) for c in measurement_contours]
 
     # Using boundary matched contours to model plane transformation with RBF interpolation
     trafo_data_maps, trafo_grids, trafo_contours, trafo_ver_grids = [], [], [], []
     for index, contour in enumerate(measurement_contours):
-        trafo_grid, trafo_ver_grid, trafo_contour, rbf_x_inv, rbf_y_inv = transform_grid2contour(
+        trafo_grid, trafo_ver_grid, trafo_contour = transform_grid2contour(
             measurement_contours[index],
             template_contours[index],
             measurement_grids[index],

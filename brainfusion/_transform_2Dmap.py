@@ -3,13 +3,55 @@ from scipy.interpolate import Rbf
 from tqdm import tqdm
 from scipy.spatial import cKDTree, distance_matrix
 import numbers
+from typing import Union, Callable, Tuple, List
 
 
-def transform_grid2contour(original_contour, deformed_contour, original_grid, test_grid, smooth='auto', progress=''):
+def transform_grid2contour(original_contour: np.ndarray, deformed_contour: np.ndarray, original_grid: np.ndarray,
+                           test_grid: np.ndarray, smooth: Union[float, str] = 'auto', progress: str = '') -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Transform a measurement grid and test grid from the original contour space to the deformed contour space
+    using Radial Basis Function (RBF) interpolation.
+
+    Parameters
+    ----------
+    original_contour : np.ndarray of shape (N, 2)
+        2D coordinates defining the original contour (reference shape).
+    deformed_contour : np.ndarray of shape (N, 2)
+        2D coordinates defining the deformed contour (target shape).
+    original_grid : np.ndarray of shape (M, 2)
+        Grid points inside or around the original contour to be transformed.
+    test_grid : np.ndarray of shape (K, 2)
+        Additional grid points to be transformed (e.g., for validation).
+    smooth : float or 'auto', default='auto'
+        Smoothing parameter for RBF interpolation. If 'auto', a default heuristic is used.
+    progress : str, optional
+        Suffix to append to tqdm progress bar description.
+
+    Returns
+    -------
+    trafo_grid : np.ndarray of shape (M, 2)
+        Transformed `original_grid` in the deformed contour space.
+    trafo_ver_grid : np.ndarray of shape (K, 2)
+        Transformed `test_grid` in the deformed contour space.
+    trafo_contour : np.ndarray of shape (N, 2)
+        Transformed original contour to check RBF accuracy.
+    """
+    for name, arr in zip(
+        ["original_contour", "deformed_contour", "original_grid", "test_grid"],
+        [original_contour, deformed_contour, original_grid, test_grid]
+    ):
+        if not isinstance(arr, np.ndarray):
+            raise TypeError(f"{name} must be a NumPy array.")
+        if arr.ndim != 2 or arr.shape[1] != 2:
+            raise ValueError(f"{name} must have shape (N, 2). Got {arr.shape}.")
+
+    if isinstance(smooth, str) and smooth != 'auto':
+        raise ValueError("`smooth` must be a float or 'auto'.")
+
     # Create RBF interpolators (forward and inverse)
-    rbf_x, rbf_y, rbf_x_inv, rbf_y_inv = create_rbf_interpolators(original_contour=original_contour,
-                                                                  deformed_contour=deformed_contour,
-                                                                  smooth=smooth)
+    rbf_x, rbf_y = create_rbf_interpolators(original_contour=original_contour,
+                                            deformed_contour=deformed_contour,
+                                            smooth=smooth)
 
     # Apply transformation to original contour to check whether deformation works as expected
     trafo_contour = np.array([
@@ -25,19 +67,54 @@ def transform_grid2contour(original_contour, deformed_contour, original_grid, te
         [rbf_x(x, y), rbf_y(x, y)] for x, y in test_grid
     ])
 
-    return trafo_grid, trafo_ver_grid, trafo_contour, rbf_x_inv, rbf_y_inv
+    return trafo_grid, trafo_ver_grid, trafo_contour
 
 
-# ToDo: Implement new interpolation function scipy.interpolate.RBFInterpolator
-# ToDo: Implement smooth bijective transformation to quickly invert for faster interpolation to regular grid
-def create_rbf_interpolators(original_contour, deformed_contour, function='linear', smooth='auto'):
+def create_rbf_interpolators(original_contour: np.ndarray, deformed_contour: np.ndarray, function: str = 'linear',
+                             smooth: Union[float, str] = 'auto') -> Tuple[Callable, Callable]:
+    """
+   Create RBF interpolators to map coordinates from original to deformed contour.
+
+   Parameters
+   ----------
+   original_contour : np.ndarray of shape (N, 2)
+       Points on the original contour (X, Y).
+   deformed_contour : np.ndarray of shape (N, 2)
+       Corresponding points on the deformed contour (X', Y').
+   function : str
+       Type of RBF function (e.g. 'linear', 'multiquadric', 'gaussian').
+   smooth : float or 'auto'
+       Smoothing parameter. If 'auto', a default based on average spacing is used.
+
+   Returns
+   -------
+   rbf_x : Callable
+       Interpolator for x-coordinates.
+   rbf_y : Callable
+       Interpolator for y-coordinates.
+   """
+    # ToDo: Implement new interpolation function scipy.interpolate.RBFInterpolator
+    # ToDo: Implement smooth bijective transformation to quickly invert for faster interpolation to regular grid
+    if not (isinstance(original_contour, np.ndarray) and isinstance(deformed_contour, np.ndarray)):
+        raise TypeError("Contours must be numpy arrays.")
+
+    if original_contour.shape != deformed_contour.shape or original_contour.shape[1] != 2:
+        raise ValueError("Contours must be of shape (N, 2) and match in size.")
+
+    if not isinstance(function, str):
+        raise TypeError("`function` must be a string.")
+
+    valid_functions = {'multiquadric', 'inverse', 'gaussian', 'linear', 'cubic', 'quintic', 'thin_plate'}
+    if function not in valid_functions:
+        raise ValueError(f"`function` must be one of: {valid_functions}. Got '{function}'.")
+
     if smooth == "auto":
         D = distance_matrix(original_contour, original_contour)
         np.fill_diagonal(D, np.inf)
         typical_spacing = np.min(D, axis=1).mean()
         smooth = 0.1 * typical_spacing
     elif isinstance(smooth, numbers.Number) is False:
-        raise Exception('The msoothing parameter is not valid. Use "auto" or aa number!')
+        raise TypeError('`smooth` must be a number or "auto".')
 
     x_orig, y_orig = original_contour[:, 0], original_contour[:, 1]
     x_deform, y_deform = deformed_contour[:, 0], deformed_contour[:, 1]
@@ -46,17 +123,46 @@ def create_rbf_interpolators(original_contour, deformed_contour, function='linea
     rbf_x = Rbf(x_orig, y_orig, x_deform, function=function, smooth=smooth)
     rbf_y = Rbf(x_orig, y_orig, y_deform, function=function, smooth=smooth)
 
-    # Approximate backward mapping from deformation space to definition space
-    rbf_x_inv = Rbf(x_deform, y_deform, x_orig, function=function, smooth=smooth)
-    rbf_y_inv = Rbf(x_deform, y_deform, y_orig, function=function, smooth=smooth)
-
-    return rbf_x, rbf_y, rbf_x_inv, rbf_y_inv
+    return rbf_x, rbf_y
 
 
-def extend_grid(measurement_grids, x_extend, y_extend):
+def extend_grid(measurement_grids: List[np.ndarray], x_extend: float, y_extend: float) -> Tuple[np.ndarray, List[int]]:
     """
-    Extends the overall grid based on multiple measurement grids.
+    Generate an extended regular grid that encompasses all provided measurement grids.
+
+    This function computes a global 2D bounding box across multiple input grids,
+    estimates the typical local spacing in x and y directions using nearest-neighbour distances,
+    and returns a regularly spaced grid that extends beyond the original bounding box
+    by a user-defined percentage in each direction.
+
+    Parameters
+    ----------
+    measurement_grids : list of np.ndarray
+        A list of 2D arrays of shape (N, 2), each representing (x, y) coordinates of a measurement grid.
+    x_extend : float
+        Fraction by which to extend the grid in the x-direction, relative to the total x-span.
+        For example, `x_extend=0.1` adds 10% to both the left and right of the x-range.
+    y_extend : float
+        Same as `x_extend`, but in the y-direction.
+
+    Returns
+    -------
+    extended_grid_stack : np.ndarray of shape (P, 2)
+        Flattened list of (x, y) coordinates of the extended grid.
+    extended_grid_shape : list of int
+        Shape of the regular grid as [n_rows, n_cols], useful for reshaping.
+
+    Notes
+    -----
+    When estimating spacing, each grid uses distances to up to 4 nearest neighbours (excluding itself).
+    If a grid contains fewer than 5 points, the number of neighbours is automatically reduced
+    to avoid indexing errors and ensure robust spacing estimation.
     """
+    if not isinstance(measurement_grids, list):
+        raise TypeError("measurement_grids must be a list of 2D numpy arrays.")
+    if not all(isinstance(grid, np.ndarray) and grid.ndim == 2 and grid.shape[1] == 2 for grid in measurement_grids):
+        raise ValueError("Each grid must be a 2D NumPy array of shape (N, 2).")
+
     # Find global min/max across all grids
     all_points = np.vstack(measurement_grids)
     x_min, y_min = np.min(all_points, axis=0)
@@ -68,15 +174,17 @@ def extend_grid(measurement_grids, x_extend, y_extend):
 
     # Compute the median of unique absolute x and y distances to the 4 nearest neighbours for a set of 2D coordinates
     for grid in measurement_grids:
+        n_points = len(grid)
+        k_query = min(5, n_points)
         tree = cKDTree(grid)
-        dists, idxs = tree.query(grid, k=5)
+        dists, idxs = tree.query(grid, k=k_query)
 
         seen_pairs = set()
         dx_list = []
         dy_list = []
 
         for i in range(len(grid)):
-            for j_idx in range(1, 5):  # skip self (index 0)
+            for j_idx in range(1, k_query):  # skip self (index 0)
                 j = idxs[i, j_idx]
                 pair = tuple(sorted((i, j)))
                 if pair not in seen_pairs:

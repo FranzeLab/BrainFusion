@@ -2,9 +2,10 @@ import os
 import tifffile as tiff
 from tifffile import TiffFile
 import numpy as np
+from skimage.transform import AffineTransform
 
 from brainfusion._io import get_roi_from_txt
-from brainfusion._utils import bin_single_image_channel, transform_outline_for_binning, apply_affine_transform
+from brainfusion._utils import bin_2D_image, bin_outline
 
 
 def load_hcr_experiment(folder_path, key_point_filename="None", rot_axis_filename="None",
@@ -132,9 +133,9 @@ def load_synapse_experiment(folder_path, key_point_filename="None", rot_axis_fil
         if image.ndim == 2:  # Single-channel
             tmp_img = image
             if isinstance(bin_size, int):
-                tmp_img = bin_single_image_channel(tmp_img, bin_size=bin_size, crop=True)
-                tif_contour = transform_outline_for_binning(tif_contour, bin_size=bin_size, crop=True,
-                                                            original_shape=image.shape[-2:])
+                tmp_img = bin_2D_image(tmp_img, bin_size=bin_size, crop=True)
+                tif_contour = bin_outline(tif_contour, bin_size=bin_size, crop=True,
+                                          original_shape=image.shape[-2:])
                 binned = True
             channels['Channel_1'] = tmp_img.ravel()
             height, width = tmp_img.shape[-2:]
@@ -143,11 +144,13 @@ def load_synapse_experiment(folder_path, key_point_filename="None", rot_axis_fil
             for i in range(image.shape[0]):
                 tmp_img = image[i]
                 if isinstance(bin_size, int):
-                    tmp_img = bin_single_image_channel(tmp_img, bin_size=bin_size, crop=True)
-                    tif_contour = transform_outline_for_binning(tif_contour, bin_size=bin_size, crop=True,
-                                                                original_shape=image.shape[-2:])
+                    tmp_img = bin_2D_image(tmp_img, bin_size=bin_size, crop=True)
+
                     binned = True
+
                 channels[f'Channel_{i + 1}'] = tmp_img.ravel()
+            tif_contour = bin_outline(tif_contour, bin_size=bin_size, crop=True,
+                                      original_shape=image.shape[-2:])
             height, width = tmp_img.shape[-2:]
         else:
             raise ValueError(f"Invalid image dimension: {image.ndim}")
@@ -196,13 +199,15 @@ def load_synapse_experiment(folder_path, key_point_filename="None", rot_axis_fil
                 # Final integer conversion
                 channels[key] = scaled.astype(dtype)
 
-        # Transform coordinates from image to micro meter
+        # Transform coordinates from image coordinates to micro meter
         scale_matrix = np.array([
             [x_res, 0, 0],
             [0, y_res, 0],
             [0, 0, 1]])
-        pixel_grid = apply_affine_transform(pixel_grid, scale_matrix)
-        tif_contour = apply_affine_transform(tif_contour, scale_matrix)
+
+        aff = AffineTransform(matrix=scale_matrix)
+        pixel_grid = aff(pixel_grid)
+        tif_contour = aff(tif_contour)
 
         # Store data as dictionary and contour
         tif_contours.append(tif_contour)

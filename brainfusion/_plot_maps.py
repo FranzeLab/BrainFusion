@@ -123,7 +123,7 @@ def plot_brainfusion_results(analysis_file, results_folder, key_quant, image_dat
                                vmin=vmin,
                                vmax=vmax,
                                mask=mask)
-        output_path = os.path.join(results_folder, f'Averaged_Maps.png')
+        output_path = os.path.join(results_folder, f'Averaged_Maps.svg')
         fig.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
 

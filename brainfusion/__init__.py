@@ -2,8 +2,7 @@
 
 from brainfusion.load_experiments.load_afm import load_batchforce_all, load_batchforce_single, load_sc_afm_myelin
 from brainfusion.load_experiments.load_images import load_hcr_experiment, load_synapse_experiment
-from brainfusion._gmm_correlation import (fit_coordinates_gmm, bin_and_correlate, afm_brillouin_transformation,
-                                          correlate_afm_myelin)
+from brainfusion._correlation import correlate_dense_around_sparse
 from brainfusion._match_contours import interpolate_contour, align_contours
 from brainfusion._plot_maps import plot_brainfusion_results, plot_correlation_with_radii, plot_correlation_masks
 from brainfusion._transform_2Dmap import transform_grid2contour, extend_grid
@@ -25,7 +24,7 @@ __all__ = [
     "import_analysis",
     "check_parameters",
     "append_parquet_file",
-    "correlate_afm_myelin",
+    "correlate_dense_around_sparse",
     "mask_contour",
     "brain_fusion",
     "brain_fusion_correlation",
