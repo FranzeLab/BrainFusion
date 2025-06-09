@@ -12,6 +12,7 @@ Measurement data can for example be averaged after interpolation to a common reg
 
 This makes spatial cross-correlations of any arbitrary measurement signal easily possible!
 
+[![codecov](https://codecov.io/gh/nik-liegroup/BrainFusion/branch/main/graph/badge.svg)](https://codecov.io/gh/nik-liegroup/BrainFusion)
 
 ## Table of Contents
 
