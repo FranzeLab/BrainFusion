@@ -123,8 +123,8 @@ def plot_brainfusion_results(analysis_file, results_folder, key_quant, image_dat
                                vmin=vmin,
                                vmax=vmax,
                                mask=mask)
-        output_path = os.path.join(results_folder, f'Averaged_Maps.svg')
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+        output_path = os.path.join(results_folder, f'Averaged_Maps.png')
+        fig.savefig(output_path, dpi=300, bbox_inches=None)
         plt.close()
 
         # Save averaged data map as tif
@@ -362,6 +362,26 @@ def plot_average_map(data_avg, grid_avg, template_contour, cbar_label='', cmap='
             c=data_avg, cmap=cmap, s=marker_size, marker='s', vmin=vmin, vmax=vmax
         )
 
+    ## TEMP: AFM scaled to m but images to µm
+    """
+    from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+    import matplotlib.font_manager as fm
+
+    scalebar = AnchoredSizeBar(
+        ax.transData,  # coordinate system: data units (µm)
+        size=100,  # length of scalebar in µm
+        label='100 µm',  # label text
+        loc='lower right',  # location of scalebar
+        pad=0.3,  # padding around bar
+        color='black',
+        frameon=False,
+        size_vertical=5,  # thickness of the bar
+        fontproperties=fm.FontProperties(size=10)
+    )
+    ax.add_artist(scalebar)
+    """
+    ## TEMP
+
     # Colorbar settings
     cbar = fig.colorbar(heatmap, ax=ax)
     cbar.ax.tick_params(labelsize=15)
@@ -375,7 +395,7 @@ def plot_average_map(data_avg, grid_avg, template_contour, cbar_label='', cmap='
     ax.set_xticks([])
     ax.set_yticks([])
 
-    plt.tight_layout()
+    #plt.tight_layout()
 
     return fig
 
@@ -682,6 +702,36 @@ def plot_cumulative(analysis_file, raw_key, projected=True, results_folder=None,
     os.makedirs(results_folder, exist_ok=True)
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
+
+
+def plot_correlation_density(dense_data, sparse_data, y_label="Dense data", x_label="Sparse data", point_size=15,
+                             results_folder=None, results_name=None):
+    # Convert to arrays and normalise to max value
+    dense_data = np.asarray(dense_data)
+    sparse_data = np.asarray(sparse_data)
+
+    dense_data_norm = dense_data / dense_data.max()
+    sparse_data_norm = sparse_data / sparse_data.max()
+
+    # Create square plot
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.scatter(sparse_data_norm, dense_data_norm, s=point_size, color='black', alpha=0.9)
+    ax.set_xlabel(x_label, fontsize=20)
+    ax.set_ylabel(y_label, fontsize=20)
+    ax.tick_params(labelsize=18)
+
+    # Set equal range and aspect
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_aspect('equal', adjustable='box')
+
+    if isinstance(results_folder, str) and isinstance(results_name, str):
+        os.makedirs(results_folder, exist_ok=True)
+        save_path = os.path.join(results_folder, f'{results_name}.png')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+
+    plt.show()
+    return fig
 
 
 def plot_correlation_with_radii(sparse_grid, dense_grid, contour, radii, results_folder=None, title=""):
