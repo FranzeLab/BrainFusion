@@ -1,6 +1,7 @@
 # brainfusion/__init__.py
 
-from brainfusion.load_experiments.load_afm import load_batchforce_all, load_batchforce_single, load_sc_afm_myelin
+from brainfusion.load_experiments.load_afm import (load_batchforce_all, load_batchforce_single, load_sc_afm_myelin,
+                                                   load_salini_afm)
 from brainfusion.load_experiments.load_images import load_microscopy_experiment
 from brainfusion._correlation import correlate_dense_around_sparse
 from brainfusion._match_contours import interpolate_contour, align_contours
@@ -16,6 +17,7 @@ __all__ = [
     "load_batchforce_all",
     "load_batchforce_single",
     "load_sc_afm_myelin",
+    "load_salini_afm",
     "load_microscopy_experiment",
     "plot_brainfusion_results",
     "plot_correlation_with_radii",
