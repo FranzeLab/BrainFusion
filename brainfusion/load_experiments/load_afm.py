@@ -314,13 +314,17 @@ def load_salini_afm(base_path, boundary_filename, key_point_filename=None, rot_a
             axes.append(None)
 
     # Load target
-    contour_name = re.sub(r"_(left|right)$", fr"_{boundary_filename}_\1", "Saliani_2019_mC6_left")
+    folder_name = "Saliani_2019_mC6_left"
+    contour_name = re.sub(r"_(left|right)$", fr"_{boundary_filename}_\1", folder_name)
+    contour_path = os.path.join(base_path, folder_name, f"{contour_name}.txt")
     target_contour = get_roi_from_txt(contour_path, delimiter=',')
 
-    keypoint_name = re.sub(r"_(left|right)$", fr"_{key_point_filename}_\1", "Saliani_2019_mC6_left")
+    keypoint_name = re.sub(r"_(left|right)$", fr"_{key_point_filename}_\1", folder_name)
+    keypoint_path = os.path.join(base_path, folder_name, f"{keypoint_name}.txt")
     target_keypoint = get_roi_from_txt(keypoint_path, delimiter=',')
 
-    axis_name = re.sub(r"_(left|right)$", fr"_{rot_axis_filename}_\1", "Saliani_2019_mC6_left")
+    axis_name = re.sub(r"_(left|right)$", fr"_{rot_axis_filename}_\1", folder_name)
+    axis_path = os.path.join(base_path, folder_name, f"{axis_name}.txt")
     target_axis = get_roi_from_txt(axis_path, delimiter=',')
 
     # Use Salini atlas data as the first list item

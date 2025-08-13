@@ -250,7 +250,8 @@ def append_parquet_file(base_path, brainfusion_analysis, salini=False):
     Write brainfusion analysis file to parquet file.
     """
     if salini is True:
-        for idx, folder_name in enumerate(brainfusion_analysis['measurement_filenames']):
+        for idx, _ in enumerate(brainfusion_analysis['template_contours']):
+            folder_name = brainfusion_analysis['measurement_filenames'][idx]
             folder_path = os.path.join(base_path, folder_name)
             parquet_name = re.sub(r"_(left|right)$", r"_afm_measurements_fortranslation_\1", folder_name)
             parquet_path = os.path.join(base_path, folder_name, f"{parquet_name}.parquet")
@@ -263,7 +264,6 @@ def append_parquet_file(base_path, brainfusion_analysis, salini=False):
             df['x_image_translated'], df['y_image_translated'] = trafo_grid[:, 0], trafo_grid[:, 1]
             df.to_parquet(parquet_path.removesuffix(".parquet") + '_Trafo' + '.parquet', index=False,
                           engine='pyarrow')
-
 
     else:
         parquet_file_names = [filename + '_Merged_RAW_ch02_image_roi_linearised.parquet'
