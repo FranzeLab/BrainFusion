@@ -5,7 +5,7 @@ from brainfusion.load_experiments.load_afm import (load_batchforce_all, load_bat
 from brainfusion.load_experiments.load_images import load_microscopy_experiment
 from brainfusion._correlation import correlate_dense_around_sparse
 from brainfusion._match_contours import interpolate_contour, align_contours
-from brainfusion._dtw import dtw_with_curvature_penalty, dtw_wrapper
+from brainfusion._dtw import dtw_with_curvature_penalty, segmented_contour_dtw
 from brainfusion._plot_maps import (plot_brainfusion_results, plot_correlation_with_radii, plot_correlation_masks,
                                     plot_correlation_density)
 from brainfusion._transform_2Dmap import transform_grid2contour, extend_grid

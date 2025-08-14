@@ -6,7 +6,7 @@ from skimage.transform import AffineTransform
 from typing import List, Tuple
 from collections import defaultdict
 from numpy.linalg import svd
-from brainfusion._dtw import dtw_with_curvature_penalty, dtw_wrapper
+from brainfusion._dtw import dtw_with_curvature_penalty, segmented_contour_dtw
 
 
 def interpolate_contour(contour: np.ndarray, num_points: int) -> np.ndarray:
@@ -379,8 +379,8 @@ def boundary_match_contours(contours: List[np.ndarray], template_index: int = 0,
     dtw_contours, dtw_tmp_contours = [], []
 
     for i, contour in enumerate(contours):
-        contour_dtw, contour_template_dtw = dtw_with_curvature_penalty(contour, contours[template_index],
-                                                                       base_lambda_curvature=curvature)
+        contour_dtw, contour_template_dtw = segmented_contour_dtw(contour, contours[template_index],
+                                                                  dtw_curvature=curvature)
         dtw_contours.append(contour_dtw)
         dtw_tmp_contours.append(contour_template_dtw)
 
