@@ -137,7 +137,7 @@ def create_rbf_interpolators(original_contour: np.ndarray, deformed_contour: np.
     # --- epsilon for Gaussian/MQ: epsilon = 1/length_scale ---
     needs_epsilon = function in {"gaussian", "multiquadric", "inverse_multiquadric"}
     if needs_epsilon:
-        length_scale = length_scale_factor * median_spacing
+        length_scale = 1 * median_spacing  # ToDO: Implement length_scale_factor
         epsilon = 1.0 / max(length_scale, 1e-12)
     else:
         epsilon = None

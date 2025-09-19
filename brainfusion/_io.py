@@ -269,6 +269,7 @@ def append_parquet_file(base_path, brainfusion_analysis, salini=False):
         parquet_file_names = [filename + '_Merged_RAW_ch02_image_roi_linearised.parquet'
                               for filename in brainfusion_analysis['measurement_filenames']]
         for idx, file_name in enumerate(parquet_file_names):
-            parquet_file_path = os.path.join(path, file_name)
-            df['x_translated'], df['y_translated'] = trafo_grid[:, 0], trafo_grid[:, 1]
-            df.to_parquet(parquet_file_path.removesuffix(".parquet") + '_Trafo' + '.parquet', index=False, engine='pyarrow')
+            pass
+            #parquet_file_path = os.path.join(path, file_name)
+            #df['x_translated'], df['y_translated'] = trafo_grid[:, 0], trafo_grid[:, 1]
+            #df.to_parquet(parquet_file_path.removesuffix(".parquet") + '_Trafo' + '.parquet', index=False, engine='pyarrow')
